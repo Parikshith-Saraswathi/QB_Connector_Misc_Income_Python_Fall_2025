@@ -47,7 +47,7 @@ def read_qb_data(file_path=None):
 
 
 # ----------------------------
-# STUDENT 1: Compare Data
+# STUDENT 1: Compare Data    
 # ----------------------------
 def compare_data(excel_df, qb_df):
     report = {
