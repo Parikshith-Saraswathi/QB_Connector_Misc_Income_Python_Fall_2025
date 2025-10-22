@@ -10,14 +10,26 @@ SourceLiteral = Literal["excel", "quickbooks"]
 ConflictReason = Literal["name_mismatch", "missing_in_excel", "missing_in_quickbooks"]
 
 
+# @dataclass(slots=True)
+# class MiscIncome:
+#     """Represents a misc income synchronised between Excel and QuickBooks."""
+#     customer_name: str
+#     tier_1_chart_of_account: str
+#     tier_2_chart_of_account: str
+#     memo :str
+#     amount: float
+#     source: SourceLiteral
+
 @dataclass(slots=True)
 class MiscIncome:
-    """Represents a misc income synchronised between Excel and QuickBooks."""
 
-    record_id: str
-    name: str
-    source: SourceLiteral
-
+    """Represents a payment term synchronised between Excel and QuickBooks."""
+    amount :float
+    customer_name: str  # Unique identifier (typically numeric days, e.g., "30")
+    chart_of_account1: str
+    chart_of_account2: str  # Human-readable name (e.g., "Net 30")
+    memo : str
+    source : SourceLiteral
 
 @dataclass(slots=True)
 class Conflict:

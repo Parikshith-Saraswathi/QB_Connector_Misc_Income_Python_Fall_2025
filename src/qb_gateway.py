@@ -2,7 +2,9 @@
 
 """This needs to be worked on"""
 
-from __future__ import annotations
+"""We need to implement 3 apis - DepositQuery-To check the deposits inside QB, DepositAdd- To add the excel terms to the QB, Account Query- To get the chart of accounts name for tier 1"""
+
+#from __future__ import annotations
 
 import xml.etree.ElementTree as ET
 from contextlib import contextmanager
@@ -61,155 +63,208 @@ def _parse_response(raw_xml: str) -> ET.Element:
         raise RuntimeError(status_message)
     return root
 
-
-def fetch_deposits(company_file: str | None = None) -> List[Deposits]:
-    """Return payment terms currently stored in QuickBooks."""
-
+def fetch_deposit_lines()->list[MiscIncome]:
     qbxml = (
         '<?xml version="1.0"?>\n'
         '<?qbxml version="16.0"?>\n'
         "<QBXML>\n"
         '  <QBXMLMsgsRq onError="stopOnError">\n'
-        "    <StandardTermsQueryRq/>\n"
+        "    <DepositQueryRq>\n"
+        "      <IncludeLineItems>true</IncludeLineItems>\n"
         "  </QBXMLMsgsRq>\n"
         "</QBXML>"
     )
     root = _send_qbxml(qbxml)
-    terms: List[Deposits] = []
-    for term_ret in root.findall(".//StandardTermsRet"):
-        record_id = term_ret.findtext("StdDiscountDays")
-        name = (term_ret.findtext("Name") or "").strip()
-
-        if not record_id:
-            continue
-        try:
-            record_id = str(int(record_id))
-        except ValueError:
-            record_id = record_id.strip()
-        if not record_id:
-            continue
-
-        terms.append(PaymentTerm(record_id=record_id, name=name, source="quickbooks"))
-
-    return terms
-
-
-def add_payment_terms_batch(
-    company_file: str | None, terms: List[PaymentTerm]
-) -> List[PaymentTerm]:
-    """Create multiple payment terms in QuickBooks in a single batch request."""
-
-    if not terms:
-        return []
-
-    # Build the QBXML with multiple StandardTermsAddRq entries
-    requests = []
-    for term in terms:
-        try:
-            days_value = int(term.record_id)
-        except ValueError as exc:
-            raise ValueError(
-                f"record_id must be numeric for QuickBooks payment terms: {term.record_id}"
-            ) from exc
-
-        requests.append(
-            f"    <StandardTermsAddRq>\n"
-            f"      <StandardTermsAdd>\n"
-            f"        <Name>{_escape_xml(term.name)}</Name>\n"
-            f"        <StdDiscountDays>{days_value}</StdDiscountDays>\n"
-            f"        <DiscountPct>0</DiscountPct>\n"
-            f"      </StandardTermsAdd>\n"
-            f"    </StandardTermsAddRq>"
+    deposit: list[MiscIncome] = []
+    for detail in root.findall('.//DepositQueryRs/DepositRet'):
+        amount = detail.findtext('DepositTotal')
+        customer_Name = detail.findtext('DepositLineRet/EntityRef/FullName')
+        listID = detail.findtext('DepositLineRet/AccountRef/ListID')
+        account_type = fetech_account_types(listID)
+        chart_of_accounts = detail.findtext('DepositLineRet/AccountRef/FullName')
+        if detail.find('DepositLineRet/Memo') is not None:
+            memo = detail.findtext('DepositLineRet/Memo')
+        else:
+            memo = "No Memo"
+        misc_income = MiscIncome(
+            amount=float(amount),
+            customer_name=customer_Name,
+            chart_of_account1=account_type,
+            chart_of_account2=chart_of_accounts,
+            memo = memo,
+            source = "quickbooks"
         )
+        deposit.append(misc_income)
+    return deposit
 
+def fetech_account_types(id)->str:
     qbxml = (
         '<?xml version="1.0"?>\n'
-        '<?qbxml version="13.0"?>\n'
-        "<QBXML>\n"
-        '  <QBXMLMsgsRq onError="continueOnError">\n' + "\n".join(requests) + "\n"
-        "  </QBXMLMsgsRq>\n"
-        "</QBXML>"
-    )
-
-    try:
-        root = _send_qbxml(qbxml)
-    except RuntimeError as exc:
-        # If the entire batch fails, return empty list
-        print(f"Batch add failed: {exc}")
-        return []
-
-    # Parse all responses
-    added_terms: List[PaymentTerm] = []
-    for term_ret in root.findall(".//StandardTermsRet"):
-        record_id = term_ret.findtext("StdDiscountDays")
-        if not record_id:
-            continue
-        try:
-            record_id = str(int(record_id))
-        except ValueError:
-            record_id = record_id.strip()
-        name = (term_ret.findtext("Name") or "").strip()
-        added_terms.append(
-            PaymentTerm(record_id=record_id, name=name, source="quickbooks")
-        )
-
-    return added_terms
-
-
-def add_payment_term(company_file: str | None, term: PaymentTerm) -> PaymentTerm:
-    """Create a payment term in QuickBooks and return the stored record."""
-
-    try:
-        days_value = int(term.record_id)
-    except ValueError as exc:
-        raise ValueError(
-            "record_id must be numeric for QuickBooks payment terms"
-        ) from exc
-
-    qbxml = (
-        '<?xml version="1.0"?>\n'
-        '<?qbxml version="13.0"?>\n'
+        '<?qbxml version="16.0"?>\n'
         "<QBXML>\n"
         '  <QBXMLMsgsRq onError="stopOnError">\n'
-        "    <StandardTermsAddRq>\n"
-        "      <StandardTermsAdd>\n"
-        f"        <Name>{_escape_xml(term.name)}</Name>\n"
-        f"        <StdDiscountDays>{days_value}</StdDiscountDays>\n"
-        "        <DiscountPct>0</DiscountPct>\n"
-        "      </StandardTermsAdd>\n"
-        "    </StandardTermsAddRq>\n"
+        "    <AccountQueryRq>\n"
+        "      <ListID >{id}</ListID>\n"
+        "    </AccountQueryRq>\n"
         "  </QBXMLMsgsRq>\n"
         "</QBXML>"
     )
-
-    try:
-        root = _send_qbxml(qbxml)
-    except RuntimeError as exc:
-        # Check if error is "name already in use" (error code 3100)
-        if "already in use" in str(exc):
-            # Return the term as-is since it already exists
-            return PaymentTerm(
-                record_id=term.record_id, name=term.name, source="quickbooks"
-            )
-        raise
-
-    term_ret = root.find(".//StandardTermsRet")
-    if term_ret is None:
-        return PaymentTerm(
-            record_id=term.record_id, name=term.name, source="quickbooks"
-        )
-
-    record_id = term_ret.findtext("StdDiscountDays") or term.record_id
-    try:
-        record_id = str(int(record_id))
-    except ValueError:
-        record_id = record_id.strip()
-    name = (term_ret.findtext("Name") or term.name).strip()
-
-    return PaymentTerm(record_id=record_id, name=name, source="quickbooks")
+    root = _send_qbxml(qbxml)
+    account_types: str = ""
+    name = root.find('.//AccountQueryRs/AccountRet/AccountType')
+    return name.text if name is not None else ""
 
 
-def _escape_xml(value: str) -> str:
+# def fetch_qb_deposits(company_file: str | None = None) -> List[MiscIncome]:
+#     """Return deposits currently stored in QuickBooks."""
+
+#     qbxml = (
+#         '<?xml version="1.0"?>\n'
+#         '<?qbxml version="16.0"?>\n'
+#         "<QBXML>\n"
+#         '  <QBXMLMsgsRq onError="stopOnError">\n'
+#         "    <DepositQueryRq>\n"
+#         "      <IncludeLineItems>true</IncludeLineItems>\n"
+#         "  </QBXMLMsgsRq>\n"
+#         "</QBXML>"
+#     )
+#     root = _send_qbxml(qbxml)
+#     terms: List[MiscIncome] = []
+#     for term_ret in root.findall(".//DepositQueryRs/DepositRet"):
+#         qb_Amount = term_ret.findtext("DepositTotal")
+#         name = (term_ret.findtext("Name") or "").strip()
+#         for 
+
+
+#         if not record_id:
+#             continue
+#         try:
+#             record_id = str(int(record_id))
+#         except ValueError:
+#             record_id = record_id.strip()
+#         if not record_id:
+#             continue
+
+#         terms.append(MiscIncome(amount=qb_Amount, chat_of_account=name, source="quickbooks"))
+
+#     return terms
+
+# def add_payment_terms_batch(
+#     company_file: str | None, terms: List[PaymentTerm]
+# ) -> List[PaymentTerm]:
+#     """Create multiple payment terms in QuickBooks in a single batch request."""
+
+#     if not terms:
+#         return []
+
+#     # Build the QBXML with multiple StandardTermsAddRq entries
+#     requests = []
+#     for term in terms:
+#         try:
+#             days_value = int(term.record_id)
+#         except ValueError as exc:
+#             raise ValueError(
+#                 f"record_id must be numeric for QuickBooks payment terms: {term.record_id}"
+#             ) from exc
+
+#         requests.append(
+#             f"    <StandardTermsAddRq>\n"
+#             f"      <StandardTermsAdd>\n"
+#             f"        <Name>{_escape_xml(term.name)}</Name>\n"
+#             f"        <StdDiscountDays>{days_value}</StdDiscountDays>\n"
+#             f"        <DiscountPct>0</DiscountPct>\n"
+#             f"      </StandardTermsAdd>\n"
+#             f"    </StandardTermsAddRq>"
+#         )
+
+#     qbxml = (
+#         '<?xml version="1.0"?>\n'
+#         '<?qbxml version="13.0"?>\n'
+#         "<QBXML>\n"
+#         '  <QBXMLMsgsRq onError="continueOnError">\n' + "\n".join(requests) + "\n"
+#         "  </QBXMLMsgsRq>\n"
+#         "</QBXML>"
+#     )
+
+#     try:
+#         root = _send_qbxml(qbxml)
+#     except RuntimeError as exc:
+#         # If the entire batch fails, return empty list
+#         print(f"Batch add failed: {exc}")
+#         return []
+
+#     # Parse all responses
+#     added_terms: List[PaymentTerm] = []
+#     for term_ret in root.findall(".//StandardTermsRet"):
+#         record_id = term_ret.findtext("StdDiscountDays")
+#         if not record_id:
+#             continue
+#         try:
+#             record_id = str(int(record_id))
+#         except ValueError:
+#             record_id = record_id.strip()
+#         name = (term_ret.findtext("Name") or "").strip()
+#         added_terms.append(
+#             PaymentTerm(record_id=record_id, name=name, source="quickbooks")
+#         )
+
+#     return added_terms
+
+
+# def add_payment_term(company_file: str | None, term: PaymentTerm) -> PaymentTerm:
+#     """Create a payment term in QuickBooks and return the stored record."""
+
+#     try:
+#         days_value = int(term.record_id)
+#     except ValueError as exc:
+#         raise ValueError(
+#             "record_id must be numeric for QuickBooks payment terms"
+#         ) from exc
+
+#     qbxml = (
+#         '<?xml version="1.0"?>\n'
+#         '<?qbxml version="13.0"?>\n'
+#         "<QBXML>\n"
+#         '  <QBXMLMsgsRq onError="stopOnError">\n'
+#         "    <StandardTermsAddRq>\n"
+#         "      <StandardTermsAdd>\n"
+#         f"        <Name>{_escape_xml(term.name)}</Name>\n"
+#         f"        <StdDiscountDays>{days_value}</StdDiscountDays>\n"
+#         "        <DiscountPct>0</DiscountPct>\n"
+#         "      </StandardTermsAdd>\n"
+#         "    </StandardTermsAddRq>\n"
+#         "  </QBXMLMsgsRq>\n"
+#         "</QBXML>"
+#     )
+
+#     try:
+#         root = _send_qbxml(qbxml)
+#     except RuntimeError as exc:
+#         # Check if error is "name already in use" (error code 3100)
+#         if "already in use" in str(exc):
+#             # Return the term as-is since it already exists
+#             return PaymentTerm(
+#                 record_id=term.record_id, name=term.name, source="quickbooks"
+#             )
+#         raise
+
+#     term_ret = root.find(".//StandardTermsRet")
+#     if term_ret is None:
+#         return PaymentTerm(
+#             record_id=term.record_id, name=term.name, source="quickbooks"
+#         )
+
+#     record_id = term_ret.findtext("StdDiscountDays") or term.record_id
+#     try:
+#         record_id = str(int(record_id))
+#     except ValueError:
+#         record_id = record_id.strip()
+#     name = (term_ret.findtext("Name") or term.name).strip()
+
+#     return PaymentTerm(record_id=record_id, name=name, source="quickbooks")
+
+
+# def _escape_xml(value: str) -> str:
     return (
         value.replace("&", "&amp;")
         .replace("<", "&lt;")
@@ -219,4 +274,4 @@ def _escape_xml(value: str) -> str:
     )
 
 
-__all__ = ["fetch_payment_terms", "add_payment_term", "add_payment_terms_batch"]
+__all__ = ["fetch_deposit_lines", "fetech_account_types"]
