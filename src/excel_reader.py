@@ -1,84 +1,57 @@
-"""Excel extraction stubs for payment terms."""
-
 from __future__ import annotations
-
 from pathlib import Path
 from typing import List
-
 from openpyxl import load_workbook
 
-from .models import MiscIncome
+class DepositRecord:
+    """Represents one deposit or account row from Excel."""
+    def __init__(self, record_id: str, type_: str, number: str, name: str, source: str = "excel"):
+        self.record_id = record_id
+        self.type = type_
+        self.number = number
+        self.name = name
+        self.source = source
 
+    def to_dict(self):
+        return {
+            "ID": self.record_id,
+            "Type": self.type,
+            "Number": self.number,
+            "Name": self.name,
+            "Source": self.source,
+        }
 
-def extract_payment_terms(workbook_path: Path) -> List[MiscIncome]:
-    """Return payment terms parsed from the Excel workbook.
-
-    Students should implement this function using ``openpyxl``. It must read the
-    ``payment_terms`` worksheet, build :class:`~payment_terms_cli.models.PaymentTerm`
-    instances with ``source="excel"``, and raise :class:`FileNotFoundError`
-    if the workbook cannot be located.
-    """
-
+def extract_deposits(workbook_path: Path) -> List[DepositRecord]:
+    """Extract deposit-related data from company_data.xlsx"""
     workbook_path = Path(workbook_path)
     if not workbook_path.exists():
         raise FileNotFoundError(f"Workbook not found: {workbook_path}")
 
-    workbook = load_workbook(filename=workbook_path, read_only=True, data_only=True)
-    try:
-        sheet = workbook["payment_terms"]
-    except KeyError as exc:
-        workbook.close()
-        raise ValueError("Worksheet 'payment_terms' not found in workbook") from exc
+    wb = load_workbook(filename=workbook_path, read_only=True, data_only=True)
+    sheet = wb.active
 
     rows = sheet.iter_rows(values_only=True)
-    headers_row = next(rows, None)
-    if headers_row is None:
-        workbook.close()
-        return []
+    headers = [str(h).strip() if h else "" for h in next(rows, [])]
+    header_index = {h: i for i, h in enumerate(headers)}
 
-    headers = [
-        str(header).strip() if header is not None else "" for header in headers_row
-    ]
-    header_index = {header: idx for idx, header in enumerate(headers)}
-
-    def _value(row, column_name: str):
-        idx = header_index.get(column_name)
+    def _value(row, column):
+        idx = header_index.get(column)
         if idx is None or idx >= len(row):
             return None
         return row[idx]
 
-    terms: List[PaymentTerm] = []
-    try:
-        for row in rows:
-            raw_id = _value(row, "Days")
-            if raw_id in (None, ""):
-                raw_id = _value(row, "ID")
+    records = []
+    for row in rows:
+        record_id = _value(row, "ID")
+        if not record_id:
+            continue
+        type_ = _value(row, "Type") or ""
+        number = _value(row, "Number") or ""
+        name = _value(row, "Name") or ""
 
-            name = _value(row, "Name")
-            if name is None:
-                continue
-            name_str = str(name).strip()
-            if not name_str:
-                continue
+        records.append(DepositRecord(str(record_id), str(type_), str(number), str(name)))
 
-            if raw_id in (None, ""):
-                continue
+    wb.close()
+    return records
 
-            try:
-                record_id = str(int(raw_id))
-            except (TypeError, ValueError):
-                record_id = str(raw_id).strip()
-
-            if not record_id:
-                continue
-
-            terms.append(
-                PaymentTerm(record_id=record_id, name=name_str, source="excel")
-            )
-    finally:
-        workbook.close()
-
-    return terms
-
-
-__all__ = ["extract_payment_terms"]
+__all__ = ["extract_deposits", "DepositRecord"]
