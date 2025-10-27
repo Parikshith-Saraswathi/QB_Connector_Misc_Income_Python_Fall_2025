@@ -2,7 +2,8 @@ from pathlib import Path
 from excel_reader import extract_deposits
 
 def main():
-    excel_file = Path("company_data.xlsx")
+    excel_file = Path("./company_data.xlsx")
+
     deposits = extract_deposits(excel_file)
 
     print(f"Found {len(deposits)} records:")

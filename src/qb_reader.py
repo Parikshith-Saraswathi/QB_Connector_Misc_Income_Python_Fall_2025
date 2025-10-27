@@ -2,21 +2,21 @@
 import xml.etree.ElementTree as ET
 
 
-#from .model import MiscIncome
+from .models import MiscIncome
 
 from dataclasses import dataclass
 from typing import Literal
-SourceLiteral = Literal["excel", "quickbooks"]
-@dataclass(slots=True)  
-class MiscIncome:
+# SourceLiteral = Literal["excel", "quickbooks"]
+# @dataclass(slots=True)  
+# class MiscIncome:
 
-    """Represents a payment term synchronised between Excel and QuickBooks."""
-    amount :float
-    customer_name: str  # Unique identifier (typically numeric days, e.g., "30")
-    chart_of_account1: str
-    chart_of_account2: str  # Human-readable name (e.g., "Net 30")
-    memo : str
-    source : SourceLiteral
+#     """Represents a payment term synchronised between Excel and QuickBooks."""
+#     amount :float
+#     customer_name: str  # Unique identifier (typically numeric days, e.g., "30")
+#     chart_of_account1: str
+#     chart_of_account2: str  # Human-readable name (e.g., "Net 30")
+#     memo : str
+#     source : SourceLiteral
 
 
 import xml.etree.ElementTree as ET

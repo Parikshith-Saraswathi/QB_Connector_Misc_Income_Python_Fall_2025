@@ -2,33 +2,17 @@ from __future__ import annotations
 from pathlib import Path
 from typing import List
 from openpyxl import load_workbook
+from .models import MiscIncome
 
-class DepositRecord:
-    """Represents one deposit or account row from Excel."""
-    def __init__(self, record_id: str, type_: str, number: str, name: str, source: str = "excel"):
-        self.record_id = record_id
-        self.type = type_
-        self.number = number
-        self.name = name
-        self.source = source
-
-    def to_dict(self):
-        return {
-            "ID": self.record_id,
-            "Type": self.type,
-            "Number": self.number,
-            "Name": self.name,
-            "Source": self.source,
-        }
-
-def extract_deposits(workbook_path: Path) -> List[DepositRecord]:
+def extract_deposits(workbook_path: Path) -> List[MiscIncome]:
     """Extract deposit-related data from company_data.xlsx"""
     workbook_path = Path(workbook_path)
     if not workbook_path.exists():
         raise FileNotFoundError(f"Workbook not found: {workbook_path}")
 
     wb = load_workbook(filename=workbook_path, read_only=True, data_only=True)
-    sheet = wb.active
+    # Access the worksheet by name. wb.sheetnames is a list of names, not a mapping.
+    sheet = wb["account credit nonvendor"]
 
     rows = sheet.iter_rows(values_only=True)
     headers = [str(h).strip() if h else "" for h in next(rows, [])]
@@ -42,16 +26,33 @@ def extract_deposits(workbook_path: Path) -> List[DepositRecord]:
 
     records = []
     for row in rows:
-        record_id = _value(row, "ID")
-        if not record_id:
+        parent_id = _value(row, "Parent ID")
+        if not parent_id:
             continue
-        type_ = _value(row, "Type") or ""
-        number = _value(row, "Number") or ""
-        name = _value(row, "Name") or ""
+        memo_ = _value(row, "Child ID") or ""
+        amount_ = _value(row, "Check Amount") or ""
+        chart_of_account_1_ = _value(row, "Tier 1 - Type") or ""
+        chart_of_account_2_ = _value(row, "Tier 2 - Chart of Account") or ""
+        
 
-        records.append(DepositRecord(str(record_id), str(type_), str(number), str(name)))
+        records.append(MiscIncome(amount= amount_, memo=memo_, chart_of_account1=chart_of_account_1_, 
+                                  chart_of_account2=chart_of_account_2_, customer_name=parent_id, source="excel"))
 
     wb.close()
     return records
 
-__all__ = ["extract_deposits", "DepositRecord"]
+__all__ = ["extract_deposits","MiscIncome"]
+
+
+if __name__ == "__main__":  # pragma: no cover - manual invocation
+    import sys
+
+    # Allow running as a script: poetry run python payment_terms_cli/excel_reader.py
+    try:
+        terms = extract_deposits(Path("company_data.xlsx"))
+        for term in terms:
+            print(term)
+    except Exception as e:
+        print(f"Error: {e}")
+        print("Usage: python payment_terms_cli/excel_reader.py <path-to-workbook.xlsx>")
+        sys.exit(1)

@@ -10,26 +10,23 @@ SourceLiteral = Literal["excel", "quickbooks"]
 ConflictReason = Literal["name_mismatch", "missing_in_excel", "missing_in_quickbooks"]
 
 
-# @dataclass(slots=True)
-# class MiscIncome:
-#     """Represents a misc income synchronised between Excel and QuickBooks."""
-#     customer_name: str
-#     tier_1_chart_of_account: str
-#     tier_2_chart_of_account: str
-#     memo :str
-#     amount: float
-#     source: SourceLiteral
-
 @dataclass(slots=True)
 class MiscIncome:
 
-    """Represents a payment term synchronised between Excel and QuickBooks."""
+    """Represents a Misc Income synchronised between Excel and QuickBooks."""
     amount :float
-    customer_name: str  # Unique identifier (typically numeric days, e.g., "30")
+    customer_name: str
     chart_of_account1: str
-    chart_of_account2: str  # Human-readable name (e.g., "Net 30")
+    chart_of_account2: str  
     memo : str
     source : SourceLiteral
+
+    # Define self
+    def __str__(self):
+        return (f"MiscIncome(amount={self.amount}, customer_name='{self.customer_name}', "
+                f"chart_of_account1='{self.chart_of_account1}', chart_of_account2='{self.chart_of_account2}', "
+                f"memo='{self.memo}', source='{self.source}')")
+
 
 @dataclass(slots=True)
 class Conflict:
