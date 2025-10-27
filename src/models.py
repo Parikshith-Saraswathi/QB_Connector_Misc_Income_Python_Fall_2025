@@ -14,12 +14,12 @@ ConflictReason = Literal["name_mismatch", "missing_in_excel", "missing_in_quickb
 class MiscIncome:
 
     """Represents a Misc Income synchronised between Excel and QuickBooks."""
-    amount :float
-    customer_name: str
+    amount :float 
     chart_of_account1: str
     chart_of_account2: str  
     memo : str
     source : SourceLiteral
+    customer_name: str = "Default Customer"
 
     # Define self
     def __str__(self):

@@ -36,7 +36,7 @@ def extract_deposits(workbook_path: Path) -> List[MiscIncome]:
         
 
         records.append(MiscIncome(amount= amount_, memo=memo_, chart_of_account1=chart_of_account_1_, 
-                                  chart_of_account2=chart_of_account_2_, customer_name=parent_id, source="excel"))
+                                  chart_of_account2=chart_of_account_2_, source="excel"))
 
     wb.close()
     return records
@@ -47,12 +47,12 @@ __all__ = ["extract_deposits","MiscIncome"]
 if __name__ == "__main__":  # pragma: no cover - manual invocation
     import sys
 
-    # Allow running as a script: poetry run python payment_terms_cli/excel_reader.py
+    # Allow running as a script: poetry run python src/excel_reader.py
     try:
-        terms = extract_deposits(Path("company_data.xlsx"))
-        for term in terms:
-            print(term)
+        misc_incomes = extract_deposits(Path("company_data.xlsx"))
+        for income in misc_incomes:
+            print(income)
     except Exception as e:
         print(f"Error: {e}")
-        print("Usage: python payment_terms_cli/excel_reader.py <path-to-workbook.xlsx>")
+        print("Usage: python src/excel_reader.py <path-to-workbook.xlsx>")
         sys.exit(1)
