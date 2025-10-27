@@ -2,33 +2,44 @@ from __future__ import annotations
 from pathlib import Path
 from typing import List
 from openpyxl import load_workbook
+from model import MiscIncome
 
-class DepositRecord:
-    """Represents one deposit or account row from Excel."""
-    def __init__(self, record_id: str, type_: str, number: str, name: str, source: str = "excel"):
-        self.record_id = record_id
-        self.type = type_
-        self.number = number
-        self.name = name
+
+class AccountCreditRecord:
+    """Represents one 'Account Credit Nonvendor' row from Excel."""
+    def __init__(self,
+                 customer_name: str,
+                 memo: str,
+                 amount: str,
+                 chart_of_account2: str,
+                 chart_of_account1: str,
+                 source: str = "excel"):
+        self.customer_name = customer_name
+        self.memo = memo
+        self.amount = amount
+        self.chart_of_account2 = chart_of_account2
+        self.chart_of_account1 = chart_of_account1
         self.source = source
 
     def to_dict(self):
         return {
-            "ID": self.record_id,
-            "Type": self.type,
-            "Number": self.number,
-            "Name": self.name,
-            "Source": self.source,
+            "Customer Name": self.customer_name,
+            "Memo": self.memo,
+            "Amount": self.amount,
+            "chart_of_account2": self.chart_of_account2,
+            "chart_of_account1": self.chart_of_account1,
+            "Source": self.source
         }
 
-def extract_deposits(workbook_path: Path) -> List[DepositRecord]:
-    """Extract deposit-related data from company_data.xlsx"""
+
+def extract_account_credit_records(workbook_path: Path) -> List[AccountCreditRecord]:
+    """Extract rows from the 'Account Credit Nonvendor' sheet of the Excel file."""
     workbook_path = Path(workbook_path)
     if not workbook_path.exists():
         raise FileNotFoundError(f"Workbook not found: {workbook_path}")
 
     wb = load_workbook(filename=workbook_path, read_only=True, data_only=True)
-    sheet = wb.active
+    sheet = wb["account credit nonvendor"]  # change if needed
 
     rows = sheet.iter_rows(values_only=True)
     headers = [str(h).strip() if h else "" for h in next(rows, [])]
@@ -40,18 +51,23 @@ def extract_deposits(workbook_path: Path) -> List[DepositRecord]:
             return None
         return row[idx]
 
-    records = []
+    records: List[AccountCreditRecord] = []
     for row in rows:
-        record_id = _value(row, "ID")
-        if not record_id:
+        customer_name = _value(row, "Customer") or _value(row, "Parent ID")
+        if not customer_name:
             continue
-        type_ = _value(row, "Type") or ""
-        number = _value(row, "Number") or ""
-        name = _value(row, "Name") or ""
 
-        records.append(DepositRecord(str(record_id), str(type_), str(number), str(name)))
+        record = AccountCreditRecord(
+            str(customer_name),
+            str(_value(row, "Child ID") or ""),
+            str(_value(row, "Check Amount") or ""),
+            str(_value(row, "Tier 2 - Chart of Account") or ""),
+            str(_value(row, "Tier 1 - Type") or "")
+        )
+        records.append(record)
 
     wb.close()
     return records
 
-__all__ = ["extract_deposits", "DepositRecord"]
+
+__all__ = ["extract_account_credit_records", "AccountCreditRecord"]
