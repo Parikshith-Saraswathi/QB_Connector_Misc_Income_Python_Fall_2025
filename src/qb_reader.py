@@ -4,8 +4,6 @@ import xml.etree.ElementTree as ET
 
 from .models import MiscIncome
 
-from dataclasses import dataclass
-from typing import Literal
 # SourceLiteral = Literal["excel", "quickbooks"]
 # @dataclass(slots=True)  
 # class MiscIncome:
@@ -19,9 +17,8 @@ from typing import Literal
 #     source : SourceLiteral
 
 
-import xml.etree.ElementTree as ET
 from contextlib import contextmanager
-from typing import Iterator, List
+from typing import Iterator
 
 try:
     import win32com.client  # type: ignore
@@ -132,28 +129,7 @@ def fetch_account_types(id: str) -> str:
 
 
 
-#def fetch_deposit_lines()->list[MiscIncome]:
-    deposit: list[MiscIncome] = []
-    for detail in root.findall('.//DepositQueryRs/DepositRet'):
-        amount = detail.findtext('DepositTotal')
-        customer_Name = detail.findtext('DepositLineRet/EntityRef/FullName')
-        listID = detail.findtext('DepositLineRet/AccountRef/ListID')
-        account_type = account(listID)
-        chart_of_accounts = detail.findtext('DepositLineRet/AccountRef/FullName')
-        if detail.find('DepositLineRet/Memo') is not None:
-            memo = detail.findtext('DepositLineRet/Memo')
-        else:
-            memo = "No Memo"
-        misc_income = MiscIncome(
-            amount=float(amount),
-            customer_name=customer_Name,
-            chart_of_account1=account_type,
-            chart_of_account2=chart_of_accounts,
-            memo = memo,
-            source = "quickbooks"
-        )
-        deposit.append(misc_income)
-    return deposit
+
 
 # for entity in root.findall('.//DepositQueryRs/DepositRet/DepositLineRet'):
 #     customer_Name = entity.findtext('Name')
@@ -163,29 +139,7 @@ def fetch_account_types(id: str) -> str:
 
 #print all the elements in the class MiscIncome
 
-#Reading excel file using pandas
-#def fetch_details_from_excel(excel_file: str) -> list[MiscIncome]:
-    wb = load_workbook(excel_file,read_only=True,values_only=True)
 
-    #sheet = wb.active
-
-    if "account credit nonvendor" not in wb.sheetnames:
-        raise ValueError("Sheet 'account credit nonvendor' not found in the Excel file.")
-    sheet = wb["account credit nonvendor"]
-
-
-    misc_incomes: list[MiscIncome] = []
-    for row in sheet.iter_rows(min_row=2, values_only=True):
-        misc_income = MiscIncome(
-            amount=row[0],
-            customer_name=row[1],
-            chart_of_account1=row[2],
-            chart_of_account2=row[3],
-            memo=row[4],
-            source="excel"
-        )
-        misc_incomes.append(misc_income)
-    return misc_incomes
 
 
 if __name__ == "__main__":

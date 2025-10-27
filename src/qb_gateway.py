@@ -1,3 +1,8 @@
+from contextlib import contextmanager
+from typing import Iterator
+from .models import MiscIncome
+
+import xml.etree.ElementTree as ET
 """QuickBooks COM gateway helpers for misc income."""
 
 """This needs to be worked on"""
@@ -6,16 +11,14 @@
 
 #from __future__ import annotations
 
-import xml.etree.ElementTree as ET
-from contextlib import contextmanager
-from typing import Iterator, List
+
 
 try:
     import win32com.client  # type: ignore
 except ImportError:  # pragma: no cover
     win32com = None  # type: ignore
 
-from .models import MiscIncome
+
 
 
 APP_NAME = "Quickbooks Connector"  # do not chanege this
@@ -110,7 +113,7 @@ def fetech_account_types(id)->str:
         "</QBXML>"
     )
     root = _send_qbxml(qbxml)
-    account_types: str = ""
+    #account_types: str = ""
     name = root.find('.//AccountQueryRs/AccountRet/AccountType')
     return name.text if name is not None else ""
 
@@ -264,14 +267,14 @@ def fetech_account_types(id)->str:
 #     return PaymentTerm(record_id=record_id, name=name, source="quickbooks")
 
 
-# def _escape_xml(value: str) -> str:
-    return (
-        value.replace("&", "&amp;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-        .replace('"', "&quot;")
-        .replace("'", "&apos;")
-    )
+# # def _escape_xml(value: str) -> str:
+#     return (
+#         value.replace("&", "&amp;")
+#         .replace("<", "&lt;")
+#         .replace(">", "&gt;")
+#         .replace('"', "&quot;")
+#         .replace("'", "&apos;")
+#     )
 
 
 __all__ = ["fetch_deposit_lines", "fetech_account_types"]

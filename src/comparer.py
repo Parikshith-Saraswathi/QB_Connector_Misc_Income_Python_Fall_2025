@@ -1,12 +1,14 @@
+from __future__ import annotations
+
+from typing import Iterable
+
+from .models import ComparisonReport, MiscIncome
+
 """Comparison helpers for misc amount."""
 
 """Has to be implemented"""
 
-from __future__ import annotations
 
-from typing import Dict, Iterable
-
-from .models import ComparisonReport, Conflict, MiscIncome
 
 
 def compare_misc_income(
