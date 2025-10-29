@@ -2,20 +2,6 @@ import xml.etree.ElementTree as ET
 
 
 from .models import MiscIncome
-
-# SourceLiteral = Literal["excel", "quickbooks"]
-# @dataclass(slots=True)
-# class MiscIncome:
-
-#     """Represents a payment term synchronised between Excel and QuickBooks."""
-#     amount :float
-#     customer_name: str  # Unique identifier (typically numeric days, e.g., "30")
-#     chart_of_account1: str
-#     chart_of_account2: str  # Human-readable name (e.g., "Net 30")
-#     memo : str
-#     source : SourceLiteral
-
-
 from contextlib import contextmanager
 from typing import Iterator
 
@@ -23,9 +9,6 @@ try:
     import win32com.client  # type: ignore
 except ImportError:  # pragma: no cover
     win32com = None  # type: ignore
-
-# from .models import MiscIncome
-
 
 APP_NAME = "Quickbooks Connector"  # do not chanege this
 
@@ -130,7 +113,7 @@ def fetch_account_types(id: str) -> str:
         "  </QBXMLMsgsRq>\n"
         "</QBXML>"
     )
-    print(qbxml)
+    # print(qbxml)
     root = _send_qbxml(qbxml)
     account_types = root.find(".//AccountQueryRs/AccountRet/AccountType")
     if account_types is not None and account_types.text is not None:
@@ -146,6 +129,7 @@ def fetch_account_types(id: str) -> str:
 
 # print all the elements in the class MiscIncome
 
+__all__ = ["fetch_deposit_lines", "fetch_account_types", "MiscIncome"]
 
 if __name__ == "__main__":
     deposits = fetch_deposit_lines()
