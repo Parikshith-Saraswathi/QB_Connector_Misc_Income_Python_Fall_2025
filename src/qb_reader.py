@@ -1,11 +1,10 @@
-
 import xml.etree.ElementTree as ET
 
 
 from .models import MiscIncome
 
 # SourceLiteral = Literal["excel", "quickbooks"]
-# @dataclass(slots=True)  
+# @dataclass(slots=True)
 # class MiscIncome:
 
 #     """Represents a payment term synchronised between Excel and QuickBooks."""
@@ -25,7 +24,7 @@ try:
 except ImportError:  # pragma: no cover
     win32com = None  # type: ignore
 
-#from .models import MiscIncome
+# from .models import MiscIncome
 
 
 APP_NAME = "Quickbooks Connector"  # do not chanege this
@@ -58,6 +57,7 @@ def _send_qbxml(qbxml: str) -> ET.Element:
         print(f"Received response:\n{raw_response}")  # Debug output
     return _parse_response(raw_response)
 
+
 def _parse_response(raw_xml: str) -> ET.Element:
     root = ET.fromstring(raw_xml)
     response = root.find(".//*[@statusCode]")
@@ -72,7 +72,8 @@ def _parse_response(raw_xml: str) -> ET.Element:
         raise RuntimeError(status_message)
     return root
 
-def fetch_deposit_lines()->list[MiscIncome]:
+
+def fetch_deposit_lines() -> list[MiscIncome]:
     qbxml = (
         '<?xml version="1.0"?>\n'
         '<?qbxml version="16.0"?>\n'
@@ -86,26 +87,36 @@ def fetch_deposit_lines()->list[MiscIncome]:
     )
     root = _send_qbxml(qbxml)
     deposit: list[MiscIncome] = []
-    for detail in root.findall('.//DepositQueryRs/DepositRet'):
-        amount = detail.findtext('DepositTotal')
-        customer_Name = detail.findtext('DepositLineRet/EntityRef/FullName')
-        listID = detail.findtext('DepositLineRet/AccountRef/ListID')
-        account_type = fetch_account_types(listID)
-        chart_of_accounts = detail.findtext('DepositLineRet/AccountRef/FullName')
-        if detail.find('DepositLineRet/Memo') is not None:
-            memo = detail.findtext('DepositLineRet/Memo')
+    for detail in root.findall(".//DepositQueryRs/DepositRet"):
+        amount = detail.findtext("DepositTotal") or "0.0"
+        customer_Name = (
+            detail.findtext("DepositLineRet/EntityRef/FullName") or "Default Customer"
+        )
+        listID = detail.findtext("DepositLineRet/AccountRef/ListID")
+        # Only call fetch_account_types if listID exists
+        account_type = fetch_account_types(listID) if listID else "Unknown"
+        chart_of_accounts = (
+            detail.findtext("DepositLineRet/AccountRef/FullName") or "Unknown"
+        )
+        if detail.find("DepositLineRet/Memo") is not None:
+            memo = detail.findtext("DepositLineRet/Memo") or "No Memo"
         else:
             memo = "No Memo"
-        misc_income = MiscIncome(
-            amount=float(amount),
-            customer_name=customer_Name,
-            chart_of_account1=account_type,
-            chart_of_account2=chart_of_accounts,
-            memo = memo,
-            source = "quickbooks"
-        )
+        try:
+            misc_income = MiscIncome(
+                amount=float(amount),
+                customer_name=customer_Name,
+                chart_of_account1=account_type,
+                chart_of_account2=chart_of_accounts,
+                memo=memo,
+                source="quickbooks",
+            )
+        except ValueError:
+            # Skip if amount cannot be converted to float
+            continue
         deposit.append(misc_income)
     return deposit
+
 
 def fetch_account_types(id: str) -> str:
     qbxml = (
@@ -121,14 +132,10 @@ def fetch_account_types(id: str) -> str:
     )
     print(qbxml)
     root = _send_qbxml(qbxml)
-    account_types: str = ""
-    account_types = root.find('.//AccountQueryRs/AccountRet/AccountType')
-    return account_types.text if account_types is not None else ""
-
-
-
-
-
+    account_types = root.find(".//AccountQueryRs/AccountRet/AccountType")
+    if account_types is not None and account_types.text is not None:
+        return account_types.text
+    return "Unknown Account Type"
 
 
 # for entity in root.findall('.//DepositQueryRs/DepositRet/DepositLineRet'):
@@ -137,9 +144,7 @@ def fetch_account_types(id: str) -> str:
 
 # print(root.attrib)
 
-#print all the elements in the class MiscIncome
-
-
+# print all the elements in the class MiscIncome
 
 
 if __name__ == "__main__":

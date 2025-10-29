@@ -3,22 +3,20 @@ from typing import Iterator
 from .models import MiscIncome
 
 import xml.etree.ElementTree as ET
+
 """QuickBooks COM gateway helpers for misc income."""
 
 """This needs to be worked on"""
 
 """We need to implement 3 apis - DepositQuery-To check the deposits inside QB, DepositAdd- To add the excel terms to the QB, Account Query- To get the chart of accounts name for tier 1"""
 
-#from __future__ import annotations
-
+# from __future__ import annotations
 
 
 try:
     import win32com.client  # type: ignore
 except ImportError:  # pragma: no cover
     win32com = None  # type: ignore
-
-
 
 
 APP_NAME = "Quickbooks Connector"  # do not chanege this
@@ -66,7 +64,8 @@ def _parse_response(raw_xml: str) -> ET.Element:
         raise RuntimeError(status_message)
     return root
 
-def fetch_deposit_lines()->list[MiscIncome]:
+
+def fetch_deposit_lines() -> list[MiscIncome]:
     qbxml = (
         '<?xml version="1.0"?>\n'
         '<?qbxml version="16.0"?>\n'
@@ -79,43 +78,54 @@ def fetch_deposit_lines()->list[MiscIncome]:
     )
     root = _send_qbxml(qbxml)
     deposit: list[MiscIncome] = []
-    for detail in root.findall('.//DepositQueryRs/DepositRet'):
-        amount = detail.findtext('DepositTotal')
-        customer_Name = detail.findtext('DepositLineRet/EntityRef/FullName')
-        listID = detail.findtext('DepositLineRet/AccountRef/ListID')
-        account_type = fetech_account_types(listID)
-        chart_of_accounts = detail.findtext('DepositLineRet/AccountRef/FullName')
-        if detail.find('DepositLineRet/Memo') is not None:
-            memo = detail.findtext('DepositLineRet/Memo')
+    for detail in root.findall(".//DepositQueryRs/DepositRet"):
+        amount = detail.findtext("DepositTotal") or "0.0"
+        customer_Name = (
+            detail.findtext("DepositLineRet/EntityRef/FullName") or "Default Customer"
+        )
+        listID = detail.findtext("DepositLineRet/AccountRef/ListID")
+        account_type = fetch_account_types(listID) if listID else "Unknown Account Type"
+        chart_of_accounts = (
+            detail.findtext("DepositLineRet/AccountRef/FullName") or "Unknown Account"
+        )
+        if detail.find("DepositLineRet/Memo") is not None:
+            memo = detail.findtext("DepositLineRet/Memo") or "No Memo"
         else:
             memo = "No Memo"
-        misc_income = MiscIncome(
-            amount=float(amount),
-            customer_name=customer_Name,
-            chart_of_account1=account_type,
-            chart_of_account2=chart_of_accounts,
-            memo = memo,
-            source = "quickbooks"
-        )
+
+        try:
+            misc_income = MiscIncome(
+                amount=float(amount),
+                customer_name=customer_Name,
+                chart_of_account1=account_type,
+                chart_of_account2=chart_of_accounts,
+                memo=memo,
+                source="quickbooks",
+            )
+        except ValueError:
+            # Skip if amount cannot be converted to float
+            continue
         deposit.append(misc_income)
     return deposit
 
-def fetech_account_types(id)->str:
+
+def fetch_account_types(id: str) -> str:
     qbxml = (
         '<?xml version="1.0"?>\n'
         '<?qbxml version="16.0"?>\n'
         "<QBXML>\n"
         '  <QBXMLMsgsRq onError="stopOnError">\n'
         "    <AccountQueryRq>\n"
-        "      <ListID >{id}</ListID>\n"
+        f"      <ListID>{id}</ListID>\n"
         "    </AccountQueryRq>\n"
         "  </QBXMLMsgsRq>\n"
         "</QBXML>"
     )
     root = _send_qbxml(qbxml)
-    #account_types: str = ""
-    name = root.find('.//AccountQueryRs/AccountRet/AccountType')
-    return name.text if name is not None else ""
+    name = root.find(".//AccountQueryRs/AccountRet/AccountType")
+    if name is not None and name.text is not None:
+        return name.text
+    return "Unknown Account Type"
 
 
 # def fetch_qb_deposits(company_file: str | None = None) -> List[MiscIncome]:
@@ -136,7 +146,7 @@ def fetech_account_types(id)->str:
 #     for term_ret in root.findall(".//DepositQueryRs/DepositRet"):
 #         qb_Amount = term_ret.findtext("DepositTotal")
 #         name = (term_ret.findtext("Name") or "").strip()
-#         for 
+#         for
 
 
 #         if not record_id:
@@ -277,4 +287,4 @@ def fetech_account_types(id)->str:
 #     )
 
 
-__all__ = ["fetch_deposit_lines", "fetech_account_types"]
+__all__ = ["fetch_deposit_lines", "fetch_account_types"]

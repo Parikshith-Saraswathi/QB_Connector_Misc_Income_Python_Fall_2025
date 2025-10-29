@@ -4,6 +4,7 @@ from typing import List
 from openpyxl import load_workbook
 from .models import MiscIncome
 
+
 def extract_deposits(workbook_path: Path) -> List[MiscIncome]:
     """Extract deposit-related data from company_data.xlsx"""
     workbook_path = Path(workbook_path)
@@ -30,18 +31,25 @@ def extract_deposits(workbook_path: Path) -> List[MiscIncome]:
         if not parent_id:
             continue
         memo_ = _value(row, "Child ID") or ""
-        amount_ = _value(row, "Check Amount") or ""
+        amount_ = float(_value(row, "Check Amount")) or 0.0
         chart_of_account_1_ = _value(row, "Tier 1 - Type") or ""
         chart_of_account_2_ = _value(row, "Tier 2 - Chart of Account") or ""
-        
 
-        records.append(MiscIncome(amount= amount_, memo=memo_, chart_of_account1=chart_of_account_1_, 
-                                  chart_of_account2=chart_of_account_2_, source="excel"))
+        records.append(
+            MiscIncome(
+                amount=amount_,
+                memo=memo_,
+                chart_of_account1=chart_of_account_1_,
+                chart_of_account2=chart_of_account_2_,
+                source="excel",
+            )
+        )
 
     wb.close()
     return records
 
-__all__ = ["extract_deposits","MiscIncome"]
+
+__all__ = ["extract_deposits", "MiscIncome"]
 
 
 if __name__ == "__main__":  # pragma: no cover - manual invocation
