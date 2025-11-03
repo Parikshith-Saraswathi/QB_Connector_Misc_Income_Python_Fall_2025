@@ -1,6 +1,4 @@
 import xml.etree.ElementTree as ET
-
-
 from .models import MiscIncome
 from contextlib import contextmanager
 from typing import Iterator
@@ -72,25 +70,20 @@ def fetch_deposit_lines() -> list[MiscIncome]:
     deposit: list[MiscIncome] = []
     for detail in root.findall(".//DepositQueryRs/DepositRet"):
         amount = detail.findtext("DepositTotal") or "0.0"
-        customer_Name = (
-            detail.findtext("DepositLineRet/EntityRef/FullName") or "Default Customer"
-        )
+        customer_Name = detail.findtext("DepositLineRet/EntityRef/FullName") or ""
         listID = detail.findtext("DepositLineRet/AccountRef/ListID")
         # Only call fetch_account_types if listID exists
-        account_type = fetch_account_types(listID) if listID else "Unknown"
-        chart_of_accounts = (
-            detail.findtext("DepositLineRet/AccountRef/FullName") or "Unknown"
-        )
-        if detail.find("DepositLineRet/Memo") is not None:
-            memo = detail.findtext("DepositLineRet/Memo") or "No Memo"
-        else:
-            memo = "No Memo"
+        account_type = fetch_account_types(listID) if listID else ""
+        chart_of_accounts = detail.findtext("DepositLineRet/AccountRef/FullName") or ""
+        memo = detail.findtext("DepositLineRet/Memo") or ""
+        # if detail.find("DepositLineRet/Memo") is not None:
+        #     memo = detail.findtext("DepositLineRet/Memo") or ""
         try:
             misc_income = MiscIncome(
                 amount=float(amount),
                 customer_name=customer_Name,
-                chart_of_account1=account_type,
-                chart_of_account2=chart_of_accounts,
+                account_type=account_type,  # changed to account_type
+                chart_of_account=chart_of_accounts,
                 memo=memo,
                 source="quickbooks",
             )
@@ -120,14 +113,6 @@ def fetch_account_types(id: str) -> str:
         return account_types.text
     return "Unknown Account Type"
 
-
-# for entity in root.findall('.//DepositQueryRs/DepositRet/DepositLineRet'):
-#     customer_Name = entity.findtext('Name')
-#     print(f'Name: {name}')
-
-# print(root.attrib)
-
-# print all the elements in the class MiscIncome
 
 __all__ = ["fetch_deposit_lines", "fetch_account_types", "MiscIncome"]
 

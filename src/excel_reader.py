@@ -32,15 +32,15 @@ def extract_deposits(workbook_path: Path) -> List[MiscIncome]:
             continue
         memo_ = _value(row, "Child ID") or ""
         amount_ = float(_value(row, "Check Amount")) or 0.0
-        chart_of_account_1_ = _value(row, "Tier 1 - Type") or ""
-        chart_of_account_2_ = _value(row, "Tier 2 - Chart of Account") or ""
+        account_type_ = _value(row, "Tier 1 - Type") or ""
+        chart_of_account_ = _value(row, "Tier 2 - Chart of Account") or ""
 
         records.append(
             MiscIncome(
                 amount=amount_,
                 memo=memo_,
-                chart_of_account1=chart_of_account_1_,
-                chart_of_account2=chart_of_account_2_,
+                account_type=account_type_,
+                chart_of_account=chart_of_account_,
                 source="excel",
             )
         )

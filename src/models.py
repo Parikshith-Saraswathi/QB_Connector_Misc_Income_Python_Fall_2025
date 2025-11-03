@@ -15,8 +15,8 @@ class MiscIncome:
     """Represents a Misc Income synchronised between Excel and QuickBooks."""
 
     amount: float
-    chart_of_account1: str
-    chart_of_account2: str
+    account_type: str
+    chart_of_account: str
     memo: str
     source: SourceLiteral
     customer_name: str = "Default Customer"
@@ -25,7 +25,7 @@ class MiscIncome:
     def __str__(self):
         return (
             f"MiscIncome(amount={self.amount}, customer_name='{self.customer_name}', "
-            f"chart_of_account1='{self.chart_of_account1}', chart_of_account2='{self.chart_of_account2}', "
+            f"account_type='{self.account_type}', chart_of_account='{self.chart_of_account}', "
             f"memo='{self.memo}', source='{self.source}')"
         )
 
@@ -34,10 +34,17 @@ class MiscIncome:
 class Conflict:
     """Describes a discrepancy between Excel and QuickBooks for misc income."""
 
-    record_id: str
+    chart_of_account_1: str
+    chart_of_account_2: str
     excel_name: str | None
     qb_name: str | None
     reason: ConflictReason
+
+    def __str__(self):
+        return (
+            f"Conflict(chart_of_account_1='{self.chart_of_account_1}', chart_of_account_2='{self.chart_of_account_2}', "
+            f"excel_name='{self.excel_name}', qb_name='{self.qb_name}', reason='{self.reason}')"
+        )
 
 
 @dataclass(slots=True)
