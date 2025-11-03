@@ -1,4 +1,3 @@
-
 """Comparison helpers for misc income.
 
 This module implements logic to reconcile two collections of misc income: one
@@ -8,9 +7,9 @@ terms unique to each source and name mismatches for shared identifiers.
 
 from __future__ import annotations
 
-from typing import Dict,Iterable
+from typing import Dict, Iterable
 
-from .models import ComparisonReport, MiscIncome,Conflict
+from .models import ComparisonReport, MiscIncome, Conflict
 
 
 # def compare_payment_terms(
@@ -114,32 +113,50 @@ from .models import ComparisonReport, MiscIncome,Conflict
     in any of the report's collections (no conflict, not Excel-only, not QB-only).
     """
 
+
 def compare_misc_income(
     excel_terms: Iterable[MiscIncome],
     qb_terms: Iterable[MiscIncome],
 ) -> ComparisonReport:
     """Compare misc income from Excel and QuickBooks."""
     # Index each collection by record_id for O(1) lookups during reconciliation
-    excel_by_chart_of_account_1: Dict[str, MiscIncome] = {t.chart_of_account1: t for t in excel_terms}
-    qb_by_chart_of_account_1: Dict[str, MiscIncome] = {t.chart_of_account1: t for t in qb_terms}
+    excel_by_chart_of_account_1: Dict[str, MiscIncome] = {
+        t.account_type: t for t in excel_terms
+    }
+    qb_by_chart_of_account_1: Dict[str, MiscIncome] = {
+        t.account_type: t for t in qb_terms
+    }
 
     # Terms present in Excel but absent in QuickBooks
-    excel_only = [t for rid, t in excel_by_chart_of_account_1.items() if rid not in qb_by_chart_of_account_1]
-    
+    excel_only = [
+        t
+        for rid, t in excel_by_chart_of_account_1.items()
+        if rid not in qb_by_chart_of_account_1
+    ]
+
     # Terms present in QuickBooks but absent in Excel
-    qb_only = [t for rid, t in qb_by_chart_of_account_1.items() if rid not in excel_by_chart_of_account_1]
+    qb_only = [
+        t
+        for rid, t in qb_by_chart_of_account_1.items()
+        if rid not in excel_by_chart_of_account_1
+    ]
 
     # For shared record_ids, check whether their names differ and record conflicts
     conflicts: list[Conflict] = []
-    for rid in excel_by_chart_of_account_1.keys() & qb_by_chart_of_account_1.keys():  # Set intersection of keys
+    for rid in (
+        excel_by_chart_of_account_1.keys() & qb_by_chart_of_account_1.keys()
+    ):  # Set intersection of keys
         excel_term = excel_by_chart_of_account_1[rid]
         qb_term = qb_by_chart_of_account_1[rid]
-        if excel_term.name != qb_term.name:  # Case-sensitive comparison per spec
+        if (
+            excel_term.account_type != qb_term.account_type
+        ):  # Case-sensitive comparison per spec
             conflicts.append(
                 Conflict(
                     chart_of_account_1=rid,
-                    excel_name=excel_term.name,
-                    qb_name=qb_term.name,
+                    chart_of_account_2=rid,
+                    excel_name=excel_term.account_type,
+                    qb_name=qb_term.account_type,
                     reason="name_mismatch",
                 )
             )
@@ -148,14 +165,11 @@ def compare_misc_income(
     return ComparisonReport(excel_only=excel_only, qb_only=qb_only, conflicts=conflicts)
 
 
-
 __all__ = ["compare_misc_income"]
 
 if __name__ == "__main__":  # pragma: no cover - manual invocation
-    import sys
-
     # Allow running as a script: poetry run python src/comparer.py
     print("This module provides comparison functions for misc income.")
-    comare = compare_misc_income(excel_terms=[],qb_terms=[])
-    for a in comare:
-        print(a)
+    # comare = compare_misc_income(excel_terms=[], qb_terms=[])
+    # for a in comare:
+    #     print(a)
