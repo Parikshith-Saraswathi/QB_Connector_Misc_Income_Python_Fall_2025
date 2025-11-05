@@ -15,7 +15,6 @@ class MiscIncome:
     """Represents a Misc Income synchronised between Excel and QuickBooks."""
 
     amount: float
-    account_type: str
     chart_of_account: str
     memo: str
     source: SourceLiteral
@@ -24,8 +23,8 @@ class MiscIncome:
     # Define self
     def __str__(self):
         return (
-            f"MiscIncome(amount={self.amount}, customer_name='{self.customer_name}', "
-            f"account_type='{self.account_type}', chart_of_account='{self.chart_of_account}', "
+            f"MiscIncome(amount={self.amount}, customer_name='{self.customer_name}',"
+            f"chart_of_account='{self.chart_of_account}', "
             f"memo='{self.memo}', source='{self.source}')"
         )
 

@@ -73,7 +73,6 @@ def fetch_deposit_lines() -> list[MiscIncome]:
         customer_Name = detail.findtext("DepositLineRet/EntityRef/FullName") or ""
         listID = detail.findtext("DepositLineRet/AccountRef/ListID")
         # Only call fetch_account_types if listID exists
-        account_type = fetch_account_types(listID) if listID else ""
         chart_of_accounts = detail.findtext("DepositLineRet/AccountRef/FullName") or ""
         memo = detail.findtext("DepositLineRet/Memo") or ""
         # if detail.find("DepositLineRet/Memo") is not None:
@@ -82,7 +81,6 @@ def fetch_deposit_lines() -> list[MiscIncome]:
             misc_income = MiscIncome(
                 amount=float(amount),
                 customer_name=customer_Name,
-                account_type=account_type,  # changed to account_type
                 chart_of_account=chart_of_accounts,
                 memo=memo,
                 source="quickbooks",

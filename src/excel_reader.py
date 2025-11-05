@@ -39,7 +39,6 @@ def extract_deposits(workbook_path: Path) -> List[MiscIncome]:
             MiscIncome(
                 amount=amount_,
                 memo=memo_,
-                account_type=account_type_,
                 chart_of_account=chart_of_account_,
                 source="excel",
             )
