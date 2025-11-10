@@ -2,7 +2,6 @@ from __future__ import annotations
 from pathlib import Path
 from typing import List
 from openpyxl import load_workbook
-from model import MiscIncome
 
 
 class AccountCreditRecord:

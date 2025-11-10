@@ -1,277 +1,67 @@
-"""QuickBooks COM gateway helpers for misc income."""
-
-"""This needs to be worked on"""
-
-"""We need to implement 3 apis - DepositQuery-To check the deposits inside QB, DepositAdd- To add the excel terms to the QB, Account Query- To get the chart of accounts name for tier 1"""
-
-#from __future__ import annotations
-
+from __future__ import annotations
 import xml.etree.ElementTree as ET
-from contextlib import contextmanager
-from typing import Iterator, List
-
-try:
-    import win32com.client  # type: ignore
-except ImportError:  # pragma: no cover
-    win32com = None  # type: ignore
+from typing import List
+from pathlib import Path
 
 from .models import MiscIncome
+from .excel_reader import extract_deposits
+from .qb_reader import _send_qbxml  # Assuming your provided QB functions are in qb_reader.py
+
+APP_NAME = "Quickbooks Connector"  # must stay the same
 
 
-APP_NAME = "Quickbooks Connector"  # do not chanege this
+def add_misc_incomes_to_qb(misc_incomes: List[MiscIncome]) -> None:
+    """
+    Add a list of MiscIncome objects to QuickBooks as DepositAddRq requests.
+    Each MiscIncome will be sent as a separate deposit line.
+    """
+    if not misc_incomes:
+        print("No income records to add.")
+        return
 
-
-def _require_win32com() -> None:
-    if win32com is None:  # pragma: no cover - exercised via tests
-        raise RuntimeError("pywin32 is required to communicate with QuickBooks")
-
-
-@contextmanager
-def _qb_session() -> Iterator[tuple[object, object]]:
-    _require_win32com()
-    session = win32com.client.Dispatch("QBXMLRP2.RequestProcessor")
-    session.OpenConnection2("", APP_NAME, 1)
-    ticket = session.BeginSession("", 0)
-    try:
-        yield session, ticket
-    finally:
-        try:
-            session.EndSession(ticket)
-        finally:
-            session.CloseConnection()
-
-
-def _send_qbxml(qbxml: str) -> ET.Element:
-    with _qb_session() as (session, ticket):
-        print(f"Sending QBXML:\n{qbxml}")  # Debug output
-        raw_response = session.ProcessRequest(ticket, qbxml)  # type: ignore[attr-defined]
-        print(f"Received response:\n{raw_response}")  # Debug output
-    return _parse_response(raw_response)
-
-
-def _parse_response(raw_xml: str) -> ET.Element:
-    root = ET.fromstring(raw_xml)
-    response = root.find(".//*[@statusCode]")
-    if response is None:
-        raise RuntimeError("QuickBooks response missing status information")
-
-    status_code = int(response.get("statusCode", "0"))
-    status_message = response.get("statusMessage", "")
-    # Status code 1 means "no matching objects found" - this is OK for queries
-    if status_code != 0 and status_code != 1:
-        print(f"QuickBooks error ({status_code}): {status_message}")
-        raise RuntimeError(status_message)
-    return root
-
-def fetch_deposit_lines()->list[MiscIncome]:
-    qbxml = (
-        '<?xml version="1.0"?>\n'
-        '<?qbxml version="16.0"?>\n'
-        "<QBXML>\n"
-        '  <QBXMLMsgsRq onError="stopOnError">\n'
-        "    <DepositQueryRq>\n"
-        "      <IncludeLineItems>true</IncludeLineItems>\n"
-        "  </QBXMLMsgsRq>\n"
-        "</QBXML>"
-    )
-    root = _send_qbxml(qbxml)
-    deposit: list[MiscIncome] = []
-    for detail in root.findall('.//DepositQueryRs/DepositRet'):
-        amount = detail.findtext('DepositTotal')
-        customer_Name = detail.findtext('DepositLineRet/EntityRef/FullName')
-        listID = detail.findtext('DepositLineRet/AccountRef/ListID')
-        account_type = fetech_account_types(listID)
-        chart_of_accounts = detail.findtext('DepositLineRet/AccountRef/FullName')
-        if detail.find('DepositLineRet/Memo') is not None:
-            memo = detail.findtext('DepositLineRet/Memo')
-        else:
-            memo = "No Memo"
-        misc_income = MiscIncome(
-            amount=float(amount),
-            customer_name=customer_Name,
-            chart_of_account1=account_type,
-            chart_of_account2=chart_of_accounts,
-            memo = memo,
-            source = "quickbooks"
+    for income in misc_incomes:
+        qbxml = (
+            '<?xml version="1.0"?>\n'
+            '<?qbxml version="16.0"?>\n'
+            "<QBXML>\n"
+            '  <QBXMLMsgsRq onError="stopOnError">\n'
+            "    <DepositAddRq requestID=\"1\">\n"
+            "      <DepositAdd>\n"
+            f"        <DepositToAccountRef>\n"
+            f"          <FullName>{income.chart_of_account}</FullName>\n"
+            f"        </DepositToAccountRef>\n"
+            f"        <Memo>{income.memo}</Memo>\n"
+            f"        <DepositLineAdd>\n"
+            f"          <DepositLineType>CashBack</DepositLineType>\n"
+            f"          <Amount>{income.amount}</Amount>\n"
+            f"          <Memo>{income.memo}</Memo>\n"
+            f"        </DepositLineAdd>\n"
+            "      </DepositAdd>\n"
+            "    </DepositAddRq>\n"
+            "  </QBXMLMsgsRq>\n"
+            "</QBXML>"
         )
-        deposit.append(misc_income)
-    return deposit
 
-def fetech_account_types(id)->str:
-    qbxml = (
-        '<?xml version="1.0"?>\n'
-        '<?qbxml version="16.0"?>\n'
-        "<QBXML>\n"
-        '  <QBXMLMsgsRq onError="stopOnError">\n'
-        "    <AccountQueryRq>\n"
-        "      <ListID >{id}</ListID>\n"
-        "    </AccountQueryRq>\n"
-        "  </QBXMLMsgsRq>\n"
-        "</QBXML>"
-    )
-    root = _send_qbxml(qbxml)
-    account_types: str = ""
-    name = root.find('.//AccountQueryRs/AccountRet/AccountType')
-    return name.text if name is not None else ""
+        print(f"Sending new deposit to QuickBooks:\n{qbxml}\n")
+        response = _send_qbxml(qbxml)
+
+        # Print confirmation from QuickBooks
+        status = response.find(".//*[@statusMessage]")
+        msg = status.get("statusMessage") if status is not None else "Unknown response"
+        print(f"QuickBooks response: {msg}\n")
 
 
-# def fetch_qb_deposits(company_file: str | None = None) -> List[MiscIncome]:
-#     """Return deposits currently stored in QuickBooks."""
+# --- MAIN GUARD FOR MANUAL EXECUTION ---
+if __name__ == "__main__":
+    print("Reading Excel and pushing deposits to QuickBooks...\n")
+    try:
+        # Example: manually test with Excel file
+        excel_path = Path("company_data.xlsx")
+        misc_incomes = extract_deposits(excel_path)
 
-#     qbxml = (
-#         '<?xml version="1.0"?>\n'
-#         '<?qbxml version="16.0"?>\n'
-#         "<QBXML>\n"
-#         '  <QBXMLMsgsRq onError="stopOnError">\n'
-#         "    <DepositQueryRq>\n"
-#         "      <IncludeLineItems>true</IncludeLineItems>\n"
-#         "  </QBXMLMsgsRq>\n"
-#         "</QBXML>"
-#     )
-#     root = _send_qbxml(qbxml)
-#     terms: List[MiscIncome] = []
-#     for term_ret in root.findall(".//DepositQueryRs/DepositRet"):
-#         qb_Amount = term_ret.findtext("DepositTotal")
-#         name = (term_ret.findtext("Name") or "").strip()
-#         for 
+        print(f"Loaded {len(misc_incomes)} records from Excel.")
+        add_misc_incomes_to_qb(misc_incomes)
 
-
-#         if not record_id:
-#             continue
-#         try:
-#             record_id = str(int(record_id))
-#         except ValueError:
-#             record_id = record_id.strip()
-#         if not record_id:
-#             continue
-
-#         terms.append(MiscIncome(amount=qb_Amount, chat_of_account=name, source="quickbooks"))
-
-#     return terms
-
-# def add_payment_terms_batch(
-#     company_file: str | None, terms: List[PaymentTerm]
-# ) -> List[PaymentTerm]:
-#     """Create multiple payment terms in QuickBooks in a single batch request."""
-
-#     if not terms:
-#         return []
-
-#     # Build the QBXML with multiple StandardTermsAddRq entries
-#     requests = []
-#     for term in terms:
-#         try:
-#             days_value = int(term.record_id)
-#         except ValueError as exc:
-#             raise ValueError(
-#                 f"record_id must be numeric for QuickBooks payment terms: {term.record_id}"
-#             ) from exc
-
-#         requests.append(
-#             f"    <StandardTermsAddRq>\n"
-#             f"      <StandardTermsAdd>\n"
-#             f"        <Name>{_escape_xml(term.name)}</Name>\n"
-#             f"        <StdDiscountDays>{days_value}</StdDiscountDays>\n"
-#             f"        <DiscountPct>0</DiscountPct>\n"
-#             f"      </StandardTermsAdd>\n"
-#             f"    </StandardTermsAddRq>"
-#         )
-
-#     qbxml = (
-#         '<?xml version="1.0"?>\n'
-#         '<?qbxml version="13.0"?>\n'
-#         "<QBXML>\n"
-#         '  <QBXMLMsgsRq onError="continueOnError">\n' + "\n".join(requests) + "\n"
-#         "  </QBXMLMsgsRq>\n"
-#         "</QBXML>"
-#     )
-
-#     try:
-#         root = _send_qbxml(qbxml)
-#     except RuntimeError as exc:
-#         # If the entire batch fails, return empty list
-#         print(f"Batch add failed: {exc}")
-#         return []
-
-#     # Parse all responses
-#     added_terms: List[PaymentTerm] = []
-#     for term_ret in root.findall(".//StandardTermsRet"):
-#         record_id = term_ret.findtext("StdDiscountDays")
-#         if not record_id:
-#             continue
-#         try:
-#             record_id = str(int(record_id))
-#         except ValueError:
-#             record_id = record_id.strip()
-#         name = (term_ret.findtext("Name") or "").strip()
-#         added_terms.append(
-#             PaymentTerm(record_id=record_id, name=name, source="quickbooks")
-#         )
-
-#     return added_terms
-
-
-# def add_payment_term(company_file: str | None, term: PaymentTerm) -> PaymentTerm:
-#     """Create a payment term in QuickBooks and return the stored record."""
-
-#     try:
-#         days_value = int(term.record_id)
-#     except ValueError as exc:
-#         raise ValueError(
-#             "record_id must be numeric for QuickBooks payment terms"
-#         ) from exc
-
-#     qbxml = (
-#         '<?xml version="1.0"?>\n'
-#         '<?qbxml version="13.0"?>\n'
-#         "<QBXML>\n"
-#         '  <QBXMLMsgsRq onError="stopOnError">\n'
-#         "    <StandardTermsAddRq>\n"
-#         "      <StandardTermsAdd>\n"
-#         f"        <Name>{_escape_xml(term.name)}</Name>\n"
-#         f"        <StdDiscountDays>{days_value}</StdDiscountDays>\n"
-#         "        <DiscountPct>0</DiscountPct>\n"
-#         "      </StandardTermsAdd>\n"
-#         "    </StandardTermsAddRq>\n"
-#         "  </QBXMLMsgsRq>\n"
-#         "</QBXML>"
-#     )
-
-#     try:
-#         root = _send_qbxml(qbxml)
-#     except RuntimeError as exc:
-#         # Check if error is "name already in use" (error code 3100)
-#         if "already in use" in str(exc):
-#             # Return the term as-is since it already exists
-#             return PaymentTerm(
-#                 record_id=term.record_id, name=term.name, source="quickbooks"
-#             )
-#         raise
-
-#     term_ret = root.find(".//StandardTermsRet")
-#     if term_ret is None:
-#         return PaymentTerm(
-#             record_id=term.record_id, name=term.name, source="quickbooks"
-#         )
-
-#     record_id = term_ret.findtext("StdDiscountDays") or term.record_id
-#     try:
-#         record_id = str(int(record_id))
-#     except ValueError:
-#         record_id = record_id.strip()
-#     name = (term_ret.findtext("Name") or term.name).strip()
-
-#     return PaymentTerm(record_id=record_id, name=name, source="quickbooks")
-
-
-# def _escape_xml(value: str) -> str:
-    return (
-        value.replace("&", "&amp;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-        .replace('"', "&quot;")
-        .replace("'", "&apos;")
-    )
-
-
-__all__ = ["fetch_deposit_lines", "fetech_account_types"]
+        print("All deposits processed successfully.\n")
+    except Exception as e:
+        print(f"Error during QuickBooks upload: {e}")
