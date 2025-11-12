@@ -1,35 +1,12 @@
-
 import xml.etree.ElementTree as ET
-
-
-#from .model import MiscIncome
-
-from dataclasses import dataclass
-from typing import Literal
-SourceLiteral = Literal["excel", "quickbooks"]
-@dataclass(slots=True)  
-class MiscIncome:
-
-    """Represents a payment term synchronised between Excel and QuickBooks."""
-    amount :float
-    customer_name: str  # Unique identifier (typically numeric days, e.g., "30")
-    chart_of_account1: str
-    chart_of_account2: str  # Human-readable name (e.g., "Net 30")
-    memo : str
-    source : SourceLiteral
-
-
-import xml.etree.ElementTree as ET
+from .models import MiscIncome
 from contextlib import contextmanager
-from typing import Iterator, List
+from typing import Iterator
 
 try:
     import win32com.client  # type: ignore
 except ImportError:  # pragma: no cover
     win32com = None  # type: ignore
-
-#from .models import MiscIncome
-
 
 APP_NAME = "Quickbooks Connector"  # do not chanege this
 
@@ -61,6 +38,7 @@ def _send_qbxml(qbxml: str) -> ET.Element:
         print(f"Received response:\n{raw_response}")  # Debug output
     return _parse_response(raw_response)
 
+
 def _parse_response(raw_xml: str) -> ET.Element:
     root = ET.fromstring(raw_xml)
     response = root.find(".//*[@statusCode]")
@@ -75,7 +53,8 @@ def _parse_response(raw_xml: str) -> ET.Element:
         raise RuntimeError(status_message)
     return root
 
-def fetch_deposit_lines()->list[MiscIncome]:
+
+def fetch_deposit_lines() -> list[MiscIncome]:
     qbxml = (
         '<?xml version="1.0"?>\n'
         '<?qbxml version="16.0"?>\n'
@@ -89,26 +68,29 @@ def fetch_deposit_lines()->list[MiscIncome]:
     )
     root = _send_qbxml(qbxml)
     deposit: list[MiscIncome] = []
-    for detail in root.findall('.//DepositQueryRs/DepositRet'):
-        amount = detail.findtext('DepositTotal')
-        customer_Name = detail.findtext('DepositLineRet/EntityRef/FullName')
-        listID = detail.findtext('DepositLineRet/AccountRef/ListID')
-        account_type = fetch_account_types(listID)
-        chart_of_accounts = detail.findtext('DepositLineRet/AccountRef/FullName')
-        if detail.find('DepositLineRet/Memo') is not None:
-            memo = detail.findtext('DepositLineRet/Memo')
-        else:
-            memo = "No Memo"
-        misc_income = MiscIncome(
-            amount=float(amount),
-            customer_name=customer_Name,
-            chart_of_account1=account_type,
-            chart_of_account2=chart_of_accounts,
-            memo = memo,
-            source = "quickbooks"
-        )
+    for detail in root.findall(".//DepositQueryRs/DepositRet"):
+        amount = detail.findtext("DepositTotal") or "0.0"
+        customer_Name = detail.findtext("DepositLineRet/EntityRef/FullName") or ""
+        listID = detail.findtext("DepositLineRet/AccountRef/ListID")
+        # Only call fetch_account_types if listID exists
+        chart_of_accounts = detail.findtext("DepositLineRet/AccountRef/FullName") or ""
+        memo = detail.findtext("DepositLineRet/Memo") or ""
+        # if detail.find("DepositLineRet/Memo") is not None:
+        #     memo = detail.findtext("DepositLineRet/Memo") or ""
+        try:
+            misc_income = MiscIncome(
+                amount=float(amount),
+                customer_name=customer_Name,
+                chart_of_account=chart_of_accounts,
+                memo=memo,
+                source="quickbooks",
+            )
+        except ValueError:
+            # Skip if amount cannot be converted to float
+            continue
         deposit.append(misc_income)
     return deposit
+
 
 def fetch_account_types(id: str) -> str:
     qbxml = (
@@ -122,71 +104,15 @@ def fetch_account_types(id: str) -> str:
         "  </QBXMLMsgsRq>\n"
         "</QBXML>"
     )
-    print(qbxml)
+    # print(qbxml)
     root = _send_qbxml(qbxml)
-    account_types: str = ""
-    account_types = root.find('.//AccountQueryRs/AccountRet/AccountType')
-    return account_types.text if account_types is not None else ""
+    account_types = root.find(".//AccountQueryRs/AccountRet/AccountType")
+    if account_types is not None and account_types.text is not None:
+        return account_types.text
+    return "Unknown Account Type"
 
 
-
-
-
-#def fetch_deposit_lines()->list[MiscIncome]:
-    deposit: list[MiscIncome] = []
-    for detail in root.findall('.//DepositQueryRs/DepositRet'):
-        amount = detail.findtext('DepositTotal')
-        customer_Name = detail.findtext('DepositLineRet/EntityRef/FullName')
-        listID = detail.findtext('DepositLineRet/AccountRef/ListID')
-        account_type = account(listID)
-        chart_of_accounts = detail.findtext('DepositLineRet/AccountRef/FullName')
-        if detail.find('DepositLineRet/Memo') is not None:
-            memo = detail.findtext('DepositLineRet/Memo')
-        else:
-            memo = "No Memo"
-        misc_income = MiscIncome(
-            amount=float(amount),
-            customer_name=customer_Name,
-            chart_of_account1=account_type,
-            chart_of_account2=chart_of_accounts,
-            memo = memo,
-            source = "quickbooks"
-        )
-        deposit.append(misc_income)
-    return deposit
-
-# for entity in root.findall('.//DepositQueryRs/DepositRet/DepositLineRet'):
-#     customer_Name = entity.findtext('Name')
-#     print(f'Name: {name}')
-
-# print(root.attrib)
-
-#print all the elements in the class MiscIncome
-
-#Reading excel file using pandas
-#def fetch_details_from_excel(excel_file: str) -> list[MiscIncome]:
-    wb = load_workbook(excel_file,read_only=True,values_only=True)
-
-    #sheet = wb.active
-
-    if "account credit nonvendor" not in wb.sheetnames:
-        raise ValueError("Sheet 'account credit nonvendor' not found in the Excel file.")
-    sheet = wb["account credit nonvendor"]
-
-
-    misc_incomes: list[MiscIncome] = []
-    for row in sheet.iter_rows(min_row=2, values_only=True):
-        misc_income = MiscIncome(
-            amount=row[0],
-            customer_name=row[1],
-            chart_of_account1=row[2],
-            chart_of_account2=row[3],
-            memo=row[4],
-            source="excel"
-        )
-        misc_incomes.append(misc_income)
-    return misc_incomes
-
+__all__ = ["fetch_deposit_lines", "fetch_account_types", "MiscIncome"]
 
 if __name__ == "__main__":
     deposits = fetch_deposit_lines()
