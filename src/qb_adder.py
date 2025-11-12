@@ -1,7 +1,8 @@
 import xml.etree.ElementTree as ET
 from .models import MiscIncome
 from contextlib import contextmanager
-from typing import Iterator
+from typing import Iterator, List
+from .input_settings import InputSettings
 
 try:
     import win32com.client  # type: ignore
@@ -9,6 +10,9 @@ except ImportError:  # pragma: no cover
     win32com = None  # type: ignore
 
 APP_NAME = "Quickbooks Connector"  # do not chanege this
+
+# Load input settings from JSON file
+settings = InputSettings.load()
 
 
 def _require_win32com() -> None:
@@ -53,31 +57,39 @@ def _parse_response(raw_xml: str) -> ET.Element:
         raise RuntimeError(status_message)
     return root
 
-def add_misc_income(company_file:str |None, incomes: list[MiscIncome]) -> list[MiscIncome]:
+def add_misc_income( miscIncome: list[MiscIncome]) -> list[MiscIncome]:
     """Create multiple Misc Income in QuickBooks in a single batch request."""
 
-    if not incomes:
+    if not miscIncome:
         return []  # Nothing to add; return early
 
-    # Build the QBXML with multiple StandardTermsAddRq entries
+    # Build the QBXML with multiple DepositAddRq entries
     requests = []  # Collect individual add requests to embed in one batch
-    for income in incomes:
+    for income in miscIncome:
         try:
-            days_value = int(term.record_id)  # QuickBooks expects a numeric days value
+            miscAmount = float(income.amount)  # QuickBooks expects a numeric amount
         except ValueError as exc:
             raise ValueError(
-                f"record_id must be numeric for QuickBooks payment terms: {term.record_id}"
+                f"amount must be numeric for QuickBooks payment terms: {income.amount}"
             ) from exc
 
-        # Build the QBXML snippet for this term creation
+        # Build the QBXML snippet for misc income addition
         requests.append(
-            f"    <StandardTermsAddRq>\n"
-            f"      <StandardTermsAdd>\n"
-            f"        <Name>{_escape_xml(term.name)}</Name>\n"
-            f"        <StdDiscountDays>{days_value}</StdDiscountDays>\n"
-            f"        <DiscountPct>0</DiscountPct>\n"
-            f"      </StandardTermsAdd>\n"
-            f"    </StandardTermsAddRq>"
+            f"    <DepositAddRq>\n"
+            f"      <DepositAdd>\n"
+            f"        <DepositToAccountRef>\n"
+            f"          <FullName>{_escape_xml(settings.bank_account)}</FullName>\n"
+            f"        </DepositToAccountRef>\n"
+            f"        <Memo>{_escape_xml(income.chart_of_account)}</Memo>\n"
+            f"        <DepositLineAdd>\n"
+            f"          <AccountRef>\n"
+            f"            <FullName>{_escape_xml(settings.account_name)}</FullName>\n"
+            f"          </AccountRef>\n"
+            f"          <Memo>{_escape_xml(income.memo)}</Memo>\n"
+            f"          <Amount>{miscAmount:.2f}</Amount>\n"
+            f"        </DepositLineAdd>\n"
+            f"      </DepositAdd>\n"
+            f"    </DepositAddRq>"
         )
 
     qbxml = (
@@ -97,75 +109,74 @@ def add_misc_income(company_file:str |None, incomes: list[MiscIncome]) -> list[M
         return []
 
     # Parse all responses
-    added_terms: List[PaymentTerm] = []  # Terms confirmed/returned by QuickBooks
-    for term_ret in root.findall(".//StandardTermsRet"):
-        record_id = term_ret.findtext("StdDiscountDays")  # Extract the ID
-        if not record_id:
-            continue
-        try:
-            record_id = str(int(record_id))  # Normalise numeric string
-        except ValueError:
-            record_id = record_id.strip()
-        name = (term_ret.findtext("Name") or "").strip()  # Extract and trim name
-        added_terms.append(
-            PaymentTerm(record_id=record_id, name=name, source="quickbooks")
+    deposit: List[MiscIncome] = []  # Deposits confirmed/returned by QuickBooks
+    for detail in root.findall(".//DepositQueryRs/DepositRet"):
+        amount = detail.findtext("DepositTotal")  # Extract the amount
+        chart_of_accounts = detail.findtext("Memo") #Extract the chart of account from Memo
+        memo = detail.findtext("DepositLineRet/Memo")  # Extract the memo
+        customer_name = detail.findtext("DepositLineRet/AccountRef/FullName")  # Extract and customer name
+        depositToAccount = detail.findtext("DepositToAccountRef/FullName")  # Extract and deposit account name
+        assert depositToAccount == settings.bank_account, f"DepositToAccount mismatch: expected {settings.bank_account}, got {depositToAccount}"
+        assert customer_name == settings.account_name, f"Customer Name mismatch: expected {settings.account_name}, got {customer_name}"
+        deposit.append(
+            MiscIncome(amount=amount, chart_of_account=chart_of_accounts,memo = memo, source="quickbooks")
         )
+        
+    return deposit  # Return all terms that were added/acknowledged
 
-    return added_terms  # Return all terms that were added/acknowledged
 
+# def add_payment_term(company_file: str | None, term: PaymentTerm) -> PaymentTerm:
+#     """Create a single payment term in QuickBooks and return the stored record."""
 
-def add_payment_term(company_file: str | None, term: PaymentTerm) -> PaymentTerm:
-    """Create a single payment term in QuickBooks and return the stored record."""
+#     try:
+#         days_value = int(term.record_id)  # Validate that the ID is numeric
+#     except ValueError as exc:
+#         raise ValueError(
+#             "record_id must be numeric for QuickBooks payment terms"
+#         ) from exc
 
-    try:
-        days_value = int(term.record_id)  # Validate that the ID is numeric
-    except ValueError as exc:
-        raise ValueError(
-            "record_id must be numeric for QuickBooks payment terms"
-        ) from exc
+#     qbxml = (
+#         '<?xml version="1.0"?>\n'
+#         '<?qbxml version="13.0"?>\n'
+#         "<QBXML>\n"
+#         '  <QBXMLMsgsRq onError="stopOnError">\n'
+#         "    <StandardTermsAddRq>\n"
+#         "      <StandardTermsAdd>\n"
+#         f"        <Name>{_escape_xml(term.name)}</Name>\n"
+#         f"        <StdDiscountDays>{days_value}</StdDiscountDays>\n"
+#         "        <DiscountPct>0</DiscountPct>\n"
+#         "      </StandardTermsAdd>\n"
+#         "    </StandardTermsAddRq>\n"
+#         "  </QBXMLMsgsRq>\n"
+#         "</QBXML>"
+#     )  # Single add request with stop-on-error behavior
 
-    qbxml = (
-        '<?xml version="1.0"?>\n'
-        '<?qbxml version="13.0"?>\n'
-        "<QBXML>\n"
-        '  <QBXMLMsgsRq onError="stopOnError">\n'
-        "    <StandardTermsAddRq>\n"
-        "      <StandardTermsAdd>\n"
-        f"        <Name>{_escape_xml(term.name)}</Name>\n"
-        f"        <StdDiscountDays>{days_value}</StdDiscountDays>\n"
-        "        <DiscountPct>0</DiscountPct>\n"
-        "      </StandardTermsAdd>\n"
-        "    </StandardTermsAddRq>\n"
-        "  </QBXMLMsgsRq>\n"
-        "</QBXML>"
-    )  # Single add request with stop-on-error behavior
+#     try:
+#         root = _send_qbxml(qbxml)  # Send request and parse response
+#     except RuntimeError as exc:
+#         # Check if error is "name already in use" (error code 3100)
+#         if "already in use" in str(exc):
+#             # Return the term as-is since it already exists
+#             return PaymentTerm(
+#                 record_id=term.record_id, name=term.name, source="quickbooks"
+#             )
+#         raise  # Re-raise other errors
 
-    try:
-        root = _send_qbxml(qbxml)  # Send request and parse response
-    except RuntimeError as exc:
-        # Check if error is "name already in use" (error code 3100)
-        if "already in use" in str(exc):
-            # Return the term as-is since it already exists
-            return PaymentTerm(
-                record_id=term.record_id, name=term.name, source="quickbooks"
-            )
-        raise  # Re-raise other errors
+#     term_ret = root.find(".//StandardTermsRet")  # Extract the returned record, if any
+#     if term_ret is None:
+#         # Some responses may omit the created object; fall back to input values
+#         return PaymentTerm(
+#             record_id=term.record_id, name=term.name, source="quickbooks"
+#         )
 
-    term_ret = root.find(".//StandardTermsRet")  # Extract the returned record, if any
-    if term_ret is None:
-        # Some responses may omit the created object; fall back to input values
-        return PaymentTerm(
-            record_id=term.record_id, name=term.name, source="quickbooks"
-        )
+#     record_id = term_ret.findtext("StdDiscountDays") or term.record_id  # Prefer QB's ID
+#     try:
+#         record_id = str(int(record_id))  # Normalise to a clean numeric string
+#     except ValueError:
+#         record_id = record_id.strip()
+#     name = (term_ret.findtext("Name") or term.name).strip()  # Prefer QB's name
 
-    record_id = term_ret.findtext("StdDiscountDays") or term.record_id  # Prefer QB's ID
-    try:
-        record_id = str(int(record_id))  # Normalise to a clean numeric string
-    except ValueError:
-        record_id = record_id.strip()
-    name = (term_ret.findtext("Name") or term.name).strip()  # Prefer QB's name
-
-    return PaymentTerm(record_id=record_id, name=name, source="quickbooks")
+#     return PaymentTerm(record_id=record_id, name=name, source="quickbooks")
 
 def _escape_xml(value: str) -> str:
     """Escape XML special characters for safe QBXML construction."""
@@ -176,3 +187,47 @@ def _escape_xml(value: str) -> str:
         .replace('"', "&quot;")
         .replace("'", "&apos;")
     )
+
+if __name__ == "__main__":
+    # Example usage: add a misc income
+    test_income = MiscIncome(
+        amount=35.63,
+        chart_of_account="new Income 35.63",
+        memo="51",
+        source="quickbooks"
+    )
+    added_incomes = add_misc_income([test_income])
+    #asserting the values which came back from QuickBooks
+    for income in added_incomes:
+        assert income.amount == test_income.amount, f"Amount mismatch: expected {test_income.amount}, got {income.amount}"
+        assert income.chart_of_account == test_income.chart_of_account, f"Chart of Account mismatch: expected {test_income.chart_of_account}, got {income.chart_of_account}"
+        assert income.memo == test_income.memo, f"Memo mismatch: expected {test_income.memo}, got {income.memo}"
+        assert income.source == test_income.source, f"Source mismatch: expected {test_income.source}, got {income.source}"
+    #print a confirmation message
+    print("Misc Income added successfully for single income entry")
+
+    # Example usage: add multiple misc incomes
+    test_incomes = [
+        MiscIncome(
+            amount=78.32,
+            chart_of_account="Rental",
+            memo="61",
+            source="quickbooks"
+        ),
+        MiscIncome(
+            amount=74.21,
+            chart_of_account="Other Income",
+            memo="62",
+            source="quickbooks"
+        ),
+    ]
+    added_incomes = add_misc_income(test_incomes)
+    #asserting the values which came back from QuickBooks
+    for income, test_income in zip(added_incomes, test_incomes):
+        assert income.amount == test_income.amount, f"Amount mismatch: expected {test_income.amount}, got {income.amount}"
+        assert income.chart_of_account == test_income.chart_of_account, f"Chart of Account mismatch: expected {test_income.chart_of_account}, got {income.chart_of_account}"
+        assert income.memo == test_income.memo, f"Memo mismatch: expected {test_income.memo}, got {income.memo}"
+        assert income.source == test_income.source, f"Source mismatch: expected {test_income.source}, got {income.source}"
+    #print a confirmation message
+    print("Misc Income added successfully for multiple income entries")
+    
