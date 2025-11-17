@@ -8,7 +8,6 @@ from typing import Any
 @dataclass(slots=True)
 class InputSettings:
     bank_account: str = ""
-    account_name: str = ""
 
     @classmethod
     def load(cls, path: Path | str = "src/input_settings.json") -> "InputSettings":
@@ -20,8 +19,7 @@ class InputSettings:
             data = json.load(fh)
         # Normalize keys
         bank_account = data.get("bank_account") or data.get("bankAccount") or ""
-        account_name = data.get("account_name") or data.get("accountName") or ""
-        return cls(bank_account=bank_account, account_name=account_name)
+        return cls(bank_account=bank_account)
 
 
 __all__ = ["InputSettings"]

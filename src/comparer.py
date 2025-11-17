@@ -121,10 +121,10 @@ def compare_misc_income(
     """Compare misc income from Excel and QuickBooks."""
     # Index each collection by record_id for O(1) lookups during reconciliation
     excel_by_chart_of_account_1: Dict[str, MiscIncome] = {
-        t.account_type: t for t in excel_terms
+        t.chart_of_account: t for t in excel_terms
     }
     qb_by_chart_of_account_1: Dict[str, MiscIncome] = {
-        t.account_type: t for t in qb_terms
+        t.chart_of_account: t for t in qb_terms
     }
 
     # Terms present in Excel but absent in QuickBooks
@@ -149,14 +149,13 @@ def compare_misc_income(
         excel_term = excel_by_chart_of_account_1[rid]
         qb_term = qb_by_chart_of_account_1[rid]
         if (
-            excel_term.account_type != qb_term.account_type
+            excel_term.chart_of_account != qb_term.chart_of_account
         ):  # Case-sensitive comparison per spec
             conflicts.append(
                 Conflict(
-                    chart_of_account_1=rid,
-                    chart_of_account_2=rid,
-                    excel_name=excel_term.account_type,
-                    qb_name=qb_term.account_type,
+                    chart_of_account=rid,
+                    excel_name=excel_term.chart_of_account,
+                    qb_name=qb_term.chart_of_account,
                     reason="name_mismatch",
                 )
             )
