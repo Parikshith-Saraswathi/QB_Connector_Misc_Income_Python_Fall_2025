@@ -70,18 +70,18 @@ def fetch_deposit_lines() -> list[MiscIncome]:
     deposit: list[MiscIncome] = []
     for detail in root.findall(".//DepositQueryRs/DepositRet"):
         amount = detail.findtext("DepositTotal") or "0.0"
-        customer_Name = detail.findtext("DepositLineRet/EntityRef/FullName") or ""
-        listID = detail.findtext("DepositLineRet/AccountRef/ListID")
+        deposit_to_account = detail.findtext("DepositToAccountRef/FullName") or ""
+        # listID = detail.findtext("DepositLineRet/AccountRef/ListID")
         # Only call fetch_account_types if listID exists
-        chart_of_accounts = detail.findtext("DepositLineRet/AccountRef/FullName") or ""
+        customer_name = detail.findtext("DepositLineRet/AccountRef/FullName") or ""
         memo = detail.findtext("DepositLineRet/Memo") or ""
         # if detail.find("DepositLineRet/Memo") is not None:
         #     memo = detail.findtext("DepositLineRet/Memo") or ""
         try:
             misc_income = MiscIncome(
                 amount=float(amount),
-                customer_name=customer_Name,
-                chart_of_account=chart_of_accounts,
+                customer_name=deposit_to_account,
+                chart_of_account=customer_name,
                 memo=memo,
                 source="quickbooks",
             )
@@ -92,27 +92,27 @@ def fetch_deposit_lines() -> list[MiscIncome]:
     return deposit
 
 
-def fetch_account_types(id: str) -> str:
-    qbxml = (
-        '<?xml version="1.0"?>\n'
-        '<?qbxml version="16.0"?>\n'
-        "<QBXML>\n"
-        '  <QBXMLMsgsRq onError="stopOnError">\n'
-        "    <AccountQueryRq>\n"
-        f"      <ListID>{id}</ListID>\n"
-        "    </AccountQueryRq>\n"
-        "  </QBXMLMsgsRq>\n"
-        "</QBXML>"
-    )
-    # print(qbxml)
-    root = _send_qbxml(qbxml)
-    account_types = root.find(".//AccountQueryRs/AccountRet/AccountType")
-    if account_types is not None and account_types.text is not None:
-        return account_types.text
-    return "Unknown Account Type"
+# def fetch_account_types(id: str) -> str:
+#     qbxml = (
+#         '<?xml version="1.0"?>\n'
+#         '<?qbxml version="16.0"?>\n'
+#         "<QBXML>\n"
+#         '  <QBXMLMsgsRq onError="stopOnError">\n'
+#         "    <AccountQueryRq>\n"
+#         f"      <ListID>{id}</ListID>\n"
+#         "    </AccountQueryRq>\n"
+#         "  </QBXMLMsgsRq>\n"
+#         "</QBXML>"
+#     )
+#     # print(qbxml)
+#     root = _send_qbxml(qbxml)
+#     account_types = root.find(".//AccountQueryRs/AccountRet/AccountType")
+#     if account_types is not None and account_types.text is not None:
+#         return account_types.text
+#     return "Unknown Account Type"
 
 
-__all__ = ["fetch_deposit_lines", "fetch_account_types", "MiscIncome"]
+__all__ = ["fetch_deposit_lines", "MiscIncome"]
 
 if __name__ == "__main__":
     deposits = fetch_deposit_lines()

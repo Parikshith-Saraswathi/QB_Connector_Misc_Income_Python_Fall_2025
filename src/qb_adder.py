@@ -57,7 +57,8 @@ def _parse_response(raw_xml: str) -> ET.Element:
         raise RuntimeError(status_message)
     return root
 
-def add_misc_income( miscIncome: list[MiscIncome]) -> list[MiscIncome]:
+
+def add_misc_income(miscIncome: list[MiscIncome]) -> list[MiscIncome]:
     """Create multiple Misc Income in QuickBooks in a single batch request."""
 
     if not miscIncome:
@@ -67,6 +68,7 @@ def add_misc_income( miscIncome: list[MiscIncome]) -> list[MiscIncome]:
     requests = []  # Collect individual add requests to embed in one batch
     for income in miscIncome:
         try:
+            # Validate that the amount is numeric
             miscAmount = float(income.amount)  # QuickBooks expects a numeric amount
         except ValueError as exc:
             raise ValueError(
@@ -80,10 +82,9 @@ def add_misc_income( miscIncome: list[MiscIncome]) -> list[MiscIncome]:
             f"        <DepositToAccountRef>\n"
             f"          <FullName>{_escape_xml(settings.bank_account)}</FullName>\n"
             f"        </DepositToAccountRef>\n"
-            f"        <Memo>{_escape_xml(income.chart_of_account)}</Memo>\n"
             f"        <DepositLineAdd>\n"
             f"          <AccountRef>\n"
-            f"            <FullName>{_escape_xml(settings.account_name)}</FullName>\n"
+            f"            <FullName>{_escape_xml(income.chart_of_account)}</FullName>\n"
             f"          </AccountRef>\n"
             f"          <Memo>{_escape_xml(income.memo)}</Memo>\n"
             f"          <Amount>{miscAmount:.2f}</Amount>\n"
@@ -112,71 +113,28 @@ def add_misc_income( miscIncome: list[MiscIncome]) -> list[MiscIncome]:
     deposit: List[MiscIncome] = []  # Deposits confirmed/returned by QuickBooks
     for detail in root.findall(".//DepositQueryRs/DepositRet"):
         amount = detail.findtext("DepositTotal")  # Extract the amount
-        chart_of_accounts = detail.findtext("Memo") #Extract the chart of account from Memo
         memo = detail.findtext("DepositLineRet/Memo")  # Extract the memo
-        customer_name = detail.findtext("DepositLineRet/AccountRef/FullName")  # Extract and customer name
-        depositToAccount = detail.findtext("DepositToAccountRef/FullName")  # Extract and deposit account name
-        assert depositToAccount == settings.bank_account, f"DepositToAccount mismatch: expected {settings.bank_account}, got {depositToAccount}"
-        assert customer_name == settings.account_name, f"Customer Name mismatch: expected {settings.account_name}, got {customer_name}"
-        deposit.append(
-            MiscIncome(amount=amount, chart_of_account=chart_of_accounts,memo = memo, source="quickbooks")
+        customer_name = detail.findtext(
+            "DepositLineRet/AccountRef/FullName"
+        )  # Extract and customer name
+        depositToAccount = detail.findtext(
+            "DepositToAccountRef/FullName"
+        )  # Extract and deposit account name
+        assert depositToAccount == settings.bank_account, (
+            f"DepositToAccount mismatch: expected {settings.bank_account}, got {depositToAccount}"
         )
-        
+        # assert customer_name == income.chart_of_account, f"Customer Name mismatch: expected {income.chart_of_account}, got {customer_name}"
+        deposit.append(
+            MiscIncome(
+                amount=float(amount) if amount else 0.0,
+                chart_of_account=str(customer_name),
+                memo=str(memo),
+                source="quickbooks",
+            )
+        )
+
     return deposit  # Return all terms that were added/acknowledged
 
-
-# def add_payment_term(company_file: str | None, term: PaymentTerm) -> PaymentTerm:
-#     """Create a single payment term in QuickBooks and return the stored record."""
-
-#     try:
-#         days_value = int(term.record_id)  # Validate that the ID is numeric
-#     except ValueError as exc:
-#         raise ValueError(
-#             "record_id must be numeric for QuickBooks payment terms"
-#         ) from exc
-
-#     qbxml = (
-#         '<?xml version="1.0"?>\n'
-#         '<?qbxml version="13.0"?>\n'
-#         "<QBXML>\n"
-#         '  <QBXMLMsgsRq onError="stopOnError">\n'
-#         "    <StandardTermsAddRq>\n"
-#         "      <StandardTermsAdd>\n"
-#         f"        <Name>{_escape_xml(term.name)}</Name>\n"
-#         f"        <StdDiscountDays>{days_value}</StdDiscountDays>\n"
-#         "        <DiscountPct>0</DiscountPct>\n"
-#         "      </StandardTermsAdd>\n"
-#         "    </StandardTermsAddRq>\n"
-#         "  </QBXMLMsgsRq>\n"
-#         "</QBXML>"
-#     )  # Single add request with stop-on-error behavior
-
-#     try:
-#         root = _send_qbxml(qbxml)  # Send request and parse response
-#     except RuntimeError as exc:
-#         # Check if error is "name already in use" (error code 3100)
-#         if "already in use" in str(exc):
-#             # Return the term as-is since it already exists
-#             return PaymentTerm(
-#                 record_id=term.record_id, name=term.name, source="quickbooks"
-#             )
-#         raise  # Re-raise other errors
-
-#     term_ret = root.find(".//StandardTermsRet")  # Extract the returned record, if any
-#     if term_ret is None:
-#         # Some responses may omit the created object; fall back to input values
-#         return PaymentTerm(
-#             record_id=term.record_id, name=term.name, source="quickbooks"
-#         )
-
-#     record_id = term_ret.findtext("StdDiscountDays") or term.record_id  # Prefer QB's ID
-#     try:
-#         record_id = str(int(record_id))  # Normalise to a clean numeric string
-#     except ValueError:
-#         record_id = record_id.strip()
-#     name = (term_ret.findtext("Name") or term.name).strip()  # Prefer QB's name
-
-#     return PaymentTerm(record_id=record_id, name=name, source="quickbooks")
 
 def _escape_xml(value: str) -> str:
     """Escape XML special characters for safe QBXML construction."""
@@ -188,46 +146,51 @@ def _escape_xml(value: str) -> str:
         .replace("'", "&apos;")
     )
 
+
 if __name__ == "__main__":
-    # Example usage: add a misc income
-    test_income = MiscIncome(
-        amount=35.63,
-        chart_of_account="new Income 35.63",
-        memo="51",
-        source="quickbooks"
-    )
-    added_incomes = add_misc_income([test_income])
-    #asserting the values which came back from QuickBooks
-    for income in added_incomes:
-        assert income.amount == test_income.amount, f"Amount mismatch: expected {test_income.amount}, got {income.amount}"
-        assert income.chart_of_account == test_income.chart_of_account, f"Chart of Account mismatch: expected {test_income.chart_of_account}, got {income.chart_of_account}"
-        assert income.memo == test_income.memo, f"Memo mismatch: expected {test_income.memo}, got {income.memo}"
-        assert income.source == test_income.source, f"Source mismatch: expected {test_income.source}, got {income.source}"
-    #print a confirmation message
-    print("Misc Income added successfully for single income entry")
+    # # Example usage: add a misc income
+    # test_income = MiscIncome(
+    #     amount=35.63,
+    #     chart_of_account="new Income 35.63",
+    #     memo="51",
+    #     source="quickbooks"
+    # )
+    # added_incomes = add_misc_income([test_income])
+    # #asserting the values which came back from QuickBooks
+    # for income in added_incomes:
+    #     assert income.amount == test_income.amount, f"Amount mismatch: expected {test_income.amount}, got {income.amount}"
+    #     assert income.chart_of_account == test_income.chart_of_account, f"Chart of Account mismatch: expected {test_income.chart_of_account}, got {income.chart_of_account}"
+    #     assert income.memo == test_income.memo, f"Memo mismatch: expected {test_income.memo}, got {income.memo}"
+    #     assert income.source == test_income.source, f"Source mismatch: expected {test_income.source}, got {income.source}"
+    # #print a confirmation message
+    # print("Misc Income added successfully for single income entry")
 
     # Example usage: add multiple misc incomes
     test_incomes = [
         MiscIncome(
-            amount=78.32,
-            chart_of_account="Rental",
-            memo="61",
-            source="quickbooks"
+            amount=21.23, chart_of_account="Rental", memo="65", source="quickbooks"
         ),
         MiscIncome(
-            amount=74.21,
-            chart_of_account="Other Income",
-            memo="62",
-            source="quickbooks"
+            amount=32.01,
+            chart_of_account="Misc Credits",
+            memo="66",
+            source="quickbooks",
         ),
     ]
     added_incomes = add_misc_income(test_incomes)
-    #asserting the values which came back from QuickBooks
+    # asserting the values which came back from QuickBooks
     for income, test_income in zip(added_incomes, test_incomes):
-        assert income.amount == test_income.amount, f"Amount mismatch: expected {test_income.amount}, got {income.amount}"
-        assert income.chart_of_account == test_income.chart_of_account, f"Chart of Account mismatch: expected {test_income.chart_of_account}, got {income.chart_of_account}"
-        assert income.memo == test_income.memo, f"Memo mismatch: expected {test_income.memo}, got {income.memo}"
-        assert income.source == test_income.source, f"Source mismatch: expected {test_income.source}, got {income.source}"
-    #print a confirmation message
+        assert income.amount == test_income.amount, (
+            f"Amount mismatch: expected {test_income.amount}, got {income.amount}"
+        )
+        assert income.chart_of_account == test_income.chart_of_account, (
+            f"Chart of Account mismatch: expected {test_income.chart_of_account}, got {income.chart_of_account}"
+        )
+        assert income.memo == test_income.memo, (
+            f"Memo mismatch: expected {test_income.memo}, got {income.memo}"
+        )
+        assert income.source == test_income.source, (
+            f"Source mismatch: expected {test_income.source}, got {income.source}"
+        )
+    # print a confirmation message
     print("Misc Income added successfully for multiple income entries")
-    

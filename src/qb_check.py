@@ -53,6 +53,7 @@ def _parse_response(raw_xml: str) -> ET.Element:
         raise RuntimeError(status_message)
     return root
 
+
 def fetch_deposit_lines() -> list[MiscIncome]:
     qbxml = f"""<?xml version="1.0" encoding="utf-8"?>
 <?qbxml version="16.0"?>
@@ -102,6 +103,7 @@ def fetch_deposit_lines() -> list[MiscIncome]:
     #     deposit.append(misc_income)
     return []
 
+
 def _escape_xml(value: str) -> str:
     """Escape XML special characters for safe QBXML construction."""
     return (
@@ -111,6 +113,7 @@ def _escape_xml(value: str) -> str:
         .replace('"', "&quot;")
         .replace("'", "&apos;")
     )
+
+
 if __name__ == "__main__":
     fetch_deposit_lines()
-    
