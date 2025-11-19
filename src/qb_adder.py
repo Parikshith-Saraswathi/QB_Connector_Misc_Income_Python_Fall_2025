@@ -1,8 +1,8 @@
 import xml.etree.ElementTree as ET
-from .models import MiscIncome
+from models import MiscIncome
 from contextlib import contextmanager
 from typing import Iterator, List
-from .input_settings import InputSettings
+from input_settings import InputSettings
 
 try:
     import win32com.client  # type: ignore
@@ -80,13 +80,13 @@ def add_misc_income(miscIncome: list[MiscIncome]) -> list[MiscIncome]:
             f"    <DepositAddRq>\n"
             f"      <DepositAdd>\n"
             f"        <DepositToAccountRef>\n"
-            f"          <FullName>{_escape_xml(settings.bank_account)}</FullName>\n"
+            f"          <FullName>{_escape_xml(str(settings.bank_account))}</FullName>\n"
             f"        </DepositToAccountRef>\n"
             f"        <DepositLineAdd>\n"
             f"          <AccountRef>\n"
-            f"            <FullName>{_escape_xml(income.chart_of_account)}</FullName>\n"
+            f"            <FullName>{_escape_xml(str(income.chart_of_account))}</FullName>\n"
             f"          </AccountRef>\n"
-            f"          <Memo>{_escape_xml(income.memo)}</Memo>\n"
+            f"          <Memo>{_escape_xml(str(income.memo))}</Memo>\n"
             f"          <Amount>{miscAmount:.2f}</Amount>\n"
             f"        </DepositLineAdd>\n"
             f"      </DepositAdd>\n"
