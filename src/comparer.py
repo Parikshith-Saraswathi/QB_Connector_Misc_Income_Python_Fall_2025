@@ -1,174 +1,117 @@
-"""Comparison helpers for misc income.
+from pathlib import Path
+from typing import List
+import dataclasses
+import json
 
-This module implements logic to reconcile two collections of misc income: one
-originating from Excel and another from QuickBooks. The comparison identifies
-terms unique to each source and name mismatches for shared identifiers.
-"""
-
-from __future__ import annotations
-
-from typing import Dict, Iterable
-
-from .models import ComparisonReport, MiscIncome, Conflict
+from models import MiscIncome, ComparisonReport, Conflict
+from excel_reader import extract_deposits
+from qb_reader import fetch_deposit_lines, _qb_session, _send_qbxml  # your QB code
 
 
-# def compare_payment_terms(
-#     excel_terms: Iterable[PaymentTerm],  # Terms sourced from Excel
-#     qb_terms: Iterable[PaymentTerm],  # Terms sourced from QuickBooks
-# ) -> ComparisonReport:
-"""Compare Excel and QuickBooks payment terms and identify discrepancies.
+def compare_excel_qb(excel_path: Path) -> ComparisonReport:
+    """Compare Excel data with QuickBooks data."""
+    excel_data: List[MiscIncome] = extract_deposits(excel_path)
+    qb_data: List[MiscIncome] = fetch_deposit_lines()
 
-    This function reconciles payment terms from two sources (Excel and QuickBooks)
-    by comparing their ``record_id`` and ``name`` fields. Students must implement
-    the logic to detect three types of discrepancies:
+    report = ComparisonReport()
 
-    1. Terms that exist only in Excel
-    2. Terms that exist only in QuickBooks
-    3. Terms with matching ``record_id`` but different ``name`` values
+    def _key(item: MiscIncome) -> str:
+        return f"{item.chart_of_account}|{item.memo}"
 
-    **Input Parameters:**
+    excel_dict = {_key(item): item for item in excel_data}
+    qb_dict = {_key(item): item for item in qb_data}
 
-    :param excel_terms: An iterable of :class:`~payment_terms_cli.models.PaymentTerm`
-        objects sourced from Excel. Each PaymentTerm has:
-
-        - ``record_id`` (str): Unique identifier for the payment term
-        - ``name`` (str): Display name of the payment term
-        - ``source`` (SourceLiteral): Will be "excel" for these terms
-
-        Example: ``PaymentTerm(record_id="NET30", name="Net 30", source="excel")``
-
-    :param qb_terms: An iterable of :class:`~payment_terms_cli.models.PaymentTerm`
-        objects sourced from QuickBooks. Structure is identical to ``excel_terms``
-        but with ``source="quickbooks"``.
-
-        Example: ``PaymentTerm(record_id="NET30", name="Net 30 Days", source="quickbooks")``
-
-    **Return Value:**
-
-    :return: A :class:`~payment_terms_cli.models.ComparisonReport` object containing
-        three lists that categorize all discrepancies found:
-
-        - ``excel_only`` (list[PaymentTerm]): Terms with ``record_id`` values that
-          appear in ``excel_terms`` but NOT in ``qb_terms``. These represent payment
-          terms that need to be added to QuickBooks.
-
-        - ``qb_only`` (list[PaymentTerm]): Terms with ``record_id`` values that
-          appear in ``qb_terms`` but NOT in ``excel_terms``. These represent payment
-          terms that may need to be removed from QuickBooks or added to Excel.
-
-        - ``conflicts`` (list[Conflict]): Terms where the same ``record_id`` exists
-          in both sources but the ``name`` field differs. Each
-          :class:`~payment_terms_cli.models.Conflict` must have:
-
-          - ``record_id`` (str): The shared record ID
-          - ``excel_name`` (str | None): The name from Excel
-          - ``qb_name`` (str | None): The name from QuickBooks
-          - ``reason`` (ConflictReason): Must be ``"name_mismatch"`` for these cases
-
-    **Implementation Requirements:**
-
-    1. Compare terms based on their ``record_id`` field (case-sensitive)
-    2. Build dictionaries or sets for efficient lookup of record IDs
-    3. Identify terms unique to each source (Excel-only and QB-only)
-    4. For matching ``record_id`` values, compare the ``name`` fields
-    5. If names differ, create a Conflict with reason ``"name_mismatch"``
-    6. Return all findings in a ComparisonReport object
-
-    **Example:**
-
-    Given these inputs::
-
-        excel_terms = [
-            PaymentTerm(record_id="NET30", name="Net 30", source="excel"),
-            PaymentTerm(record_id="NET60", name="Net 60", source="excel"),
-            PaymentTerm(record_id="COD", name="Cash on Delivery", source="excel"),
-        ]
-
-        qb_terms = [
-            PaymentTerm(record_id="NET30", name="Net 30 Days", source="quickbooks"),
-            PaymentTerm(record_id="NET60", name="Net 60", source="quickbooks"),
-            PaymentTerm(record_id="DUE", name="Due on Receipt", source="quickbooks"),
-        ]
-
-    Expected output::
-
-        ComparisonReport(
-            excel_only=[
-                PaymentTerm(record_id="COD", name="Cash on Delivery", source="excel")
-            ],
-            qb_only=[
-                PaymentTerm(record_id="DUE", name="Due on Receipt", source="quickbooks")
-            ],
-            conflicts=[
-                Conflict(
-                    record_id="NET30",
-                    excel_name="Net 30",
-                    qb_name="Net 30 Days",
-                    reason="name_mismatch"
+    # Excel-only and conflicts
+    for key, excel_item in excel_dict.items():
+        qb_item = qb_dict.get(key)
+        if not qb_item:
+            report.excel_only.append(excel_item)
+        else:
+            if abs(excel_item.amount - qb_item.amount) > 0.001 or excel_item.memo != qb_item.memo:
+                report.conflicts.append(
+                    Conflict(
+                        chart_of_account=excel_item.chart_of_account,
+                        excel_name=f"amount: {excel_item.amount}, memo: {excel_item.memo}",
+                        qb_name=f"amount: {qb_item.amount}, memo: {qb_item.memo}",
+                        reason="name_mismatch",
+                    )
                 )
-            ]
+
+    # QuickBooks-only
+    for key, qb_item in qb_dict.items():
+        if key not in excel_dict:
+            report.qb_only.append(qb_item)
+
+    return report
+
+
+def add_excel_only_to_qb(excel_only: List[MiscIncome], bank_account: str = "Default Bank") -> None:
+    """Add Excel-only deposits to QuickBooks using your existing QB logic."""
+    if not excel_only:
+        print("No Excel-only items to add to QuickBooks.")
+        return
+
+    requests = []
+    for income in excel_only:
+        requests.append(
+            f"<DepositAddRq>\n"
+            f"  <DepositAdd>\n"
+            f"    <DepositToAccountRef>\n"
+            f"      <FullName>{bank_account}</FullName>\n"
+            f"    </DepositToAccountRef>\n"
+            f"    <DepositLineAdd>\n"
+            f"      <AccountRef>\n"
+            f"        <FullName>{income.chart_of_account}</FullName>\n"
+            f"      </AccountRef>\n"
+            f"      <Memo>{income.memo}</Memo>\n"
+            f"      <Amount>{income.amount:.2f}</Amount>\n"
+            f"    </DepositLineAdd>\n"
+            f"  </DepositAdd>\n"
+            f"</DepositAddRq>"
         )
 
-    Note: NET60 appears in both sources with the same name, so it does not appear
-    in any of the report's collections (no conflict, not Excel-only, not QB-only).
-    """
+    qbxml = (
+        '<?xml version="1.0"?>\n'
+        '<?qbxml version="13.0"?>\n'
+        "<QBXML>\n"
+        '  <QBXMLMsgsRq onError="continueOnError">\n' +
+        "\n".join(requests) +
+        "\n  </QBXMLMsgsRq>\n"
+        "</QBXML>"
+    )
+
+    try:
+        _send_qbxml(qbxml)
+        print(f"Added {len(excel_only)} Excel-only items to QuickBooks.")
+    except Exception as e:
+        print(f"Failed to add Excel-only items: {e}")
 
 
-def compare_misc_income(
-    excel_terms: Iterable[MiscIncome],
-    qb_terms: Iterable[MiscIncome],
-) -> ComparisonReport:
-    """Compare misc income from Excel and QuickBooks."""
-    # Index each collection by record_id for O(1) lookups during reconciliation
-    excel_by_chart_of_account_1: Dict[str, MiscIncome] = {
-        t.chart_of_account: t for t in excel_terms
+if __name__ == "__main__":
+    excel_file = Path("company_data.xlsx")
+    report = compare_excel_qb(excel_file)
+
+    print("Excel Only:")
+    for item in report.excel_only:
+        print(item)
+
+    print("\nQuickBooks Only:")
+    for item in report.qb_only:
+        print(item)
+
+    print("\nConflicts:")
+    for conflict in report.conflicts:
+        print(conflict)
+
+    # Save JSON report
+    report_json = {
+        "excel_only": [dataclasses.asdict(item) for item in report.excel_only],
+        "qb_only": [dataclasses.asdict(item) for item in report.qb_only],
+        "conflicts": [dataclasses.asdict(c) for c in report.conflicts],
     }
-    qb_by_chart_of_account_1: Dict[str, MiscIncome] = {
-        t.chart_of_account: t for t in qb_terms
-    }
+    with open("comparison_report.json", "w") as f:
+        json.dump(report_json, f, indent=4)
+    print("\nComparison report saved to comparison_report.json")
 
-    # Terms present in Excel but absent in QuickBooks
-    excel_only = [
-        t
-        for rid, t in excel_by_chart_of_account_1.items()
-        if rid not in qb_by_chart_of_account_1
-    ]
-
-    # Terms present in QuickBooks but absent in Excel
-    qb_only = [
-        t
-        for rid, t in qb_by_chart_of_account_1.items()
-        if rid not in excel_by_chart_of_account_1
-    ]
-
-    # For shared record_ids, check whether their names differ and record conflicts
-    conflicts: list[Conflict] = []
-    for rid in (
-        excel_by_chart_of_account_1.keys() & qb_by_chart_of_account_1.keys()
-    ):  # Set intersection of keys
-        excel_term = excel_by_chart_of_account_1[rid]
-        qb_term = qb_by_chart_of_account_1[rid]
-        if (
-            excel_term.chart_of_account != qb_term.chart_of_account
-        ):  # Case-sensitive comparison per spec
-            conflicts.append(
-                Conflict(
-                    chart_of_account=rid,
-                    excel_name=excel_term.chart_of_account,
-                    qb_name=qb_term.chart_of_account,
-                    reason="name_mismatch",
-                )
-            )
-
-    # Assemble the complete comparison report
-    return ComparisonReport(excel_only=excel_only, qb_only=qb_only, conflicts=conflicts)
-
-
-__all__ = ["compare_misc_income"]
-
-if __name__ == "__main__":  # pragma: no cover - manual invocation
-    # Allow running as a script: poetry run python src/comparer.py
-    print("This module provides comparison functions for misc income.")
-    # comare = compare_misc_income(excel_terms=[], qb_terms=[])
-    # for a in comare:
-    #     print(a)
+    # Add Excel-only items to QuickBooks
+    add_excel_only_to_qb(report.excel_only, bank_account="Chase")  # replace with your bank account

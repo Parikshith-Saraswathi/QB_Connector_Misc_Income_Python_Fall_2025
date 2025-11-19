@@ -168,10 +168,10 @@ if __name__ == "__main__":
     # Example usage: add multiple misc incomes
     test_incomes = [
         MiscIncome(
-            amount=21.23, chart_of_account="Rental", memo="65", source="quickbooks"
+            amount=50.23, chart_of_account="Sales", memo="65", source="quickbooks"
         ),
         MiscIncome(
-            amount=32.01,
+            amount=40.01,
             chart_of_account="Misc Credits",
             memo="66",
             source="quickbooks",

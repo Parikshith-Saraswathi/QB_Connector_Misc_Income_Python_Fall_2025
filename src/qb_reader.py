@@ -1,5 +1,5 @@
 import xml.etree.ElementTree as ET
-from .models import MiscIncome
+from models import MiscIncome
 from contextlib import contextmanager
 from typing import Iterator
 
