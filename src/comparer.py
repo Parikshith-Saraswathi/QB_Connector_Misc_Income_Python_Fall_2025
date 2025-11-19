@@ -5,13 +5,14 @@ import json
 
 from models import MiscIncome, ComparisonReport, Conflict
 from excel_reader import extract_deposits
-from qb_reader import fetch_deposit_lines, _qb_session, _send_qbxml  # your QB code
+from qb_reader import fetch_deposit_lines  # your QB code
+from qb_adder import add_misc_income  # your QB code
 
 
-def compare_excel_qb(excel_path: Path) -> ComparisonReport:
+def compare_excel_qb(excel_data, qb_data) -> ComparisonReport:
     """Compare Excel data with QuickBooks data."""
-    excel_data: List[MiscIncome] = extract_deposits(excel_path)
-    qb_data: List[MiscIncome] = fetch_deposit_lines()
+    # excel_data: List[MiscIncome] = extract_deposits(excel_path)
+    # qb_data: List[MiscIncome] = fetch_deposit_lines()
 
     report = ComparisonReport()
 
@@ -27,13 +28,16 @@ def compare_excel_qb(excel_path: Path) -> ComparisonReport:
         if not qb_item:
             report.excel_only.append(excel_item)
         else:
-            if abs(excel_item.amount - qb_item.amount) > 0.001 or excel_item.memo != qb_item.memo:
+            if (
+                abs(float(excel_item.amount) - float(qb_item.amount)) > 0.001
+                or excel_item.memo != qb_item.memo
+            ):
                 report.conflicts.append(
                     Conflict(
                         chart_of_account=excel_item.chart_of_account,
-                        excel_name=f"amount: {excel_item.amount}, memo: {excel_item.memo}",
-                        qb_name=f"amount: {qb_item.amount}, memo: {qb_item.memo}",
-                        reason="name_mismatch",
+                        excel_name=f"amount: {excel_item.amount}, memo: {excel_item.memo}, chart_of_account: {excel_item.chart_of_account}",
+                        qb_name=f"amount: {qb_item.amount}, memo: {qb_item.memo} , chart_of_account: {qb_item.chart_of_account}",
+                        reason="data_mismatch",
                     )
                 )
 
@@ -45,51 +49,53 @@ def compare_excel_qb(excel_path: Path) -> ComparisonReport:
     return report
 
 
-def add_excel_only_to_qb(excel_only: List[MiscIncome], bank_account: str = "Default Bank") -> None:
-    """Add Excel-only deposits to QuickBooks using your existing QB logic."""
-    if not excel_only:
-        print("No Excel-only items to add to QuickBooks.")
-        return
+# def add_excel_only_to_qb(excel_only: List[MiscIncome], bank_account: str = "Default Bank") -> None:
+#     """Add Excel-only deposits to QuickBooks using your existing QB logic."""
+#     if not excel_only:
+#         print("No Excel-only items to add to QuickBooks.")
+#         return
 
-    requests = []
-    for income in excel_only:
-        requests.append(
-            f"<DepositAddRq>\n"
-            f"  <DepositAdd>\n"
-            f"    <DepositToAccountRef>\n"
-            f"      <FullName>{bank_account}</FullName>\n"
-            f"    </DepositToAccountRef>\n"
-            f"    <DepositLineAdd>\n"
-            f"      <AccountRef>\n"
-            f"        <FullName>{income.chart_of_account}</FullName>\n"
-            f"      </AccountRef>\n"
-            f"      <Memo>{income.memo}</Memo>\n"
-            f"      <Amount>{income.amount:.2f}</Amount>\n"
-            f"    </DepositLineAdd>\n"
-            f"  </DepositAdd>\n"
-            f"</DepositAddRq>"
-        )
+#     requests = []
+#     for income in excel_only:
+#         requests.append(
+#             f"<DepositAddRq>\n"
+#             f"  <DepositAdd>\n"
+#             f"    <DepositToAccountRef>\n"
+#             f"      <FullName>{bank_account}</FullName>\n"
+#             f"    </DepositToAccountRef>\n"
+#             f"    <DepositLineAdd>\n"
+#             f"      <AccountRef>\n"
+#             f"        <FullName>{income.chart_of_account}</FullName>\n"
+#             f"      </AccountRef>\n"
+#             f"      <Memo>{income.memo}</Memo>\n"
+#             f"      <Amount>{income.amount:.2f}</Amount>\n"
+#             f"    </DepositLineAdd>\n"
+#             f"  </DepositAdd>\n"
+#             f"</DepositAddRq>"
+#         )
 
-    qbxml = (
-        '<?xml version="1.0"?>\n'
-        '<?qbxml version="13.0"?>\n'
-        "<QBXML>\n"
-        '  <QBXMLMsgsRq onError="continueOnError">\n' +
-        "\n".join(requests) +
-        "\n  </QBXMLMsgsRq>\n"
-        "</QBXML>"
-    )
+#     qbxml = (
+#         '<?xml version="1.0"?>\n'
+#         '<?qbxml version="13.0"?>\n'
+#         "<QBXML>\n"
+#         '  <QBXMLMsgsRq onError="continueOnError">\n' +
+#         "\n".join(requests) +
+#         "\n  </QBXMLMsgsRq>\n"
+#         "</QBXML>"
+#     )
 
-    try:
-        _send_qbxml(qbxml)
-        print(f"Added {len(excel_only)} Excel-only items to QuickBooks.")
-    except Exception as e:
-        print(f"Failed to add Excel-only items: {e}")
+#     try:
+#         _send_qbxml(qbxml)
+#         print(f"Added {len(excel_only)} Excel-only items to QuickBooks.")
+#     except Exception as e:
+#         print(f"Failed to add Excel-only items: {e}")
 
 
 if __name__ == "__main__":
     excel_file = Path("company_data.xlsx")
-    report = compare_excel_qb(excel_file)
+    excel_data: List[MiscIncome] = extract_deposits(excel_file)
+    qb_data: List[MiscIncome] = fetch_deposit_lines()
+    report = compare_excel_qb(excel_data, qb_data)
 
     print("Excel Only:")
     for item in report.excel_only:
@@ -114,4 +120,4 @@ if __name__ == "__main__":
     print("\nComparison report saved to comparison_report.json")
 
     # Add Excel-only items to QuickBooks
-    add_excel_only_to_qb(report.excel_only, bank_account="Chase")  # replace with your bank account
+    add_misc_income(report.excel_only)  # replace with your bank account
