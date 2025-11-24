@@ -2,10 +2,11 @@ from pathlib import Path
 from typing import List
 import dataclasses
 import json
+from datetime import datetime, timezone
 
 from models import MiscIncome, ComparisonReport, Conflict
 from excel_reader import extract_deposits
-from qb_reader import fetch_deposit_lines, _qb_session, _send_qbxml  # your QB code
+from qb_reader import fetch_deposit_lines, _send_qbxml
 
 
 def compare_excel_qb(excel_path: Path) -> ComparisonReport:
@@ -45,12 +46,13 @@ def compare_excel_qb(excel_path: Path) -> ComparisonReport:
     return report
 
 
-def add_excel_only_to_qb(excel_only: List[MiscIncome], bank_account: str = "Default Bank") -> None:
-    """Add Excel-only deposits to QuickBooks using your existing QB logic."""
+def add_excel_only_to_qb(excel_only: List[MiscIncome], bank_account: str = "Default Bank") -> List[MiscIncome]:
+    """Add Excel-only deposits to QuickBooks and return the list of added items."""
     if not excel_only:
         print("No Excel-only items to add to QuickBooks.")
-        return
+        return []
 
+    added_items = []
     requests = []
     for income in excel_only:
         requests.append(
@@ -69,6 +71,7 @@ def add_excel_only_to_qb(excel_only: List[MiscIncome], bank_account: str = "Defa
             f"  </DepositAdd>\n"
             f"</DepositAddRq>"
         )
+        added_items.append(income)
 
     qbxml = (
         '<?xml version="1.0"?>\n'
@@ -85,33 +88,63 @@ def add_excel_only_to_qb(excel_only: List[MiscIncome], bank_account: str = "Defa
         print(f"Added {len(excel_only)} Excel-only items to QuickBooks.")
     except Exception as e:
         print(f"Failed to add Excel-only items: {e}")
+        added_items = []  # if error occurs, consider none added
+
+    return added_items
+
+
+def generate_report(excel_file: Path, output_path: Path = Path("comparison_report.json"), bank_account: str = "Chase"):
+    """Generate JSON report in the requested format."""
+    try:
+        report = compare_excel_qb(excel_file)
+        added_items = add_excel_only_to_qb(report.excel_only, bank_account=bank_account)
+
+        payload = {
+            "status": "success",
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "added_terms": [
+                {
+                    "record_id": str(i + 1),
+                    "name": f"{item.chart_of_account} | {item.memo}",
+                    "source": item.source,
+                }
+                for i, item in enumerate(added_items)
+            ],
+            "conflicts": [
+                {
+                    "record_id": str(i + 1),
+                    "excel_name": c.excel_name,
+                    "qb_name": c.qb_name,
+                    "reason": c.reason,
+                }
+                for i, c in enumerate(report.conflicts)
+            ] + [
+                {
+                    "record_id": str(i + 1),
+                    "excel_name": None,
+                    "qb_name": f"{item.chart_of_account} | {item.memo}",
+                    "reason": "missing_in_excel",
+                }
+                for i, item in enumerate(report.qb_only)
+            ],
+            "error": None
+        }
+
+    except Exception as e:
+        payload = {
+            "status": "error",
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "added_terms": [],
+            "conflicts": [],
+            "error": str(e)
+        }
+
+    # Write JSON file
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(payload, f, indent=2)
+    print(f"JSON report saved to {output_path}")
 
 
 if __name__ == "__main__":
-    excel_file = Path("company_data.xlsx")
-    report = compare_excel_qb(excel_file)
-
-    print("Excel Only:")
-    for item in report.excel_only:
-        print(item)
-
-    print("\nQuickBooks Only:")
-    for item in report.qb_only:
-        print(item)
-
-    print("\nConflicts:")
-    for conflict in report.conflicts:
-        print(conflict)
-
-    # Save JSON report
-    report_json = {
-        "excel_only": [dataclasses.asdict(item) for item in report.excel_only],
-        "qb_only": [dataclasses.asdict(item) for item in report.qb_only],
-        "conflicts": [dataclasses.asdict(c) for c in report.conflicts],
-    }
-    with open("comparison_report.json", "w") as f:
-        json.dump(report_json, f, indent=4)
-    print("\nComparison report saved to comparison_report.json")
-
-    # Add Excel-only items to QuickBooks
-    add_excel_only_to_qb(report.excel_only, bank_account="Chase")  # replace with your bank account
+    excel_path = Path("company_data.xlsx")
+    generate_report(excel_path, bank_account="Chase")

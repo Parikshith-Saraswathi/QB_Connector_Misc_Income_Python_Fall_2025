@@ -1,0 +1,50 @@
+{
+  "status": "success",
+  "generated_at": "2025-11-19T19:57:42.030199+00:00",
+  "added_terms": [],
+  "conflicts": [
+    {
+      "record_id": "1",
+      "excel_name": null,
+      "qb_name": "Misc Income | 51",
+      "reason": "missing_in_excel"
+    },
+    {
+      "record_id": "2",
+      "excel_name": null,
+      "qb_name": "Misc Income | 61",
+      "reason": "missing_in_excel"
+    },
+    {
+      "record_id": "3",
+      "excel_name": null,
+      "qb_name": "Misc Income | 62",
+      "reason": "missing_in_excel"
+    },
+    {
+      "record_id": "4",
+      "excel_name": null,
+      "qb_name": "Sales | 51",
+      "reason": "missing_in_excel"
+    },
+    {
+      "record_id": "5",
+      "excel_name": null,
+      "qb_name": "Sales | 61",
+      "reason": "missing_in_excel"
+    },
+    {
+      "record_id": "6",
+      "excel_name": null,
+      "qb_name": "Sales | 62",
+      "reason": "missing_in_excel"
+    },
+    {
+      "record_id": "7",
+      "excel_name": null,
+      "qb_name": "Sales | 65",
+      "reason": "missing_in_excel"
+    }
+  ],
+  "error": null
+}
