@@ -82,7 +82,7 @@ def fetch_deposit_lines() -> list[MiscIncome]:
                 amount=float(amount),
                 customer_name=deposit_to_account,
                 chart_of_account=customer_name,
-                memo=memo,
+                record_id=memo,
                 source="quickbooks",
             )
         except ValueError:

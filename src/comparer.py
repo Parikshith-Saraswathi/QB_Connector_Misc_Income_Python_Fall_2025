@@ -16,7 +16,7 @@ def compare_excel_qb(excel_data, qb_data) -> ComparisonReport:
     report.match_count = 0
 
     def _key(item: MiscIncome) -> str:
-        return f"{item.memo}"
+        return f"{item.record_id}"
 
     excel_dict = {_key(item): item for item in excel_data}
     qb_dict = {_key(item): item for item in qb_data}
@@ -32,18 +32,17 @@ def compare_excel_qb(excel_data, qb_data) -> ComparisonReport:
             if (
                 abs(float(excel_item.amount) - float(qb_item.amount)) < 0.001
                 and excel_item.chart_of_account == qb_item.chart_of_account
-                and excel_item.memo == qb_item.memo
+                and excel_item.record_id == qb_item.record_id
             ):
                 report.match_count += 1
             else:
                 report.conflicts.append(
                     Conflict(
+                        record_id=qb_item.record_id,
                         qb_chart_of_account=qb_item.chart_of_account,
                         excel_chart_of_account=excel_item.chart_of_account,
                         qb_amount=qb_item.amount,
                         excel_amount=excel_item.amount,
-                        qb_memo=qb_item.memo,
-                        excel_memo=excel_item.memo,
                         reason="Data_mismatch",
                     )
                 )

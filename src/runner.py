@@ -15,7 +15,7 @@ DEFAULT_REPORT_NAME = "misc_income_report.json"
 
 def _term_to_dict(term: MiscIncome) -> Dict[str, str]:
     return {
-        "id": term.memo,
+        "id": term.record_id,
         "chart_of_account": term.chart_of_account,
         "source": term.source,
     }
@@ -23,22 +23,22 @@ def _term_to_dict(term: MiscIncome) -> Dict[str, str]:
 
 def _conflict_to_dict(conflict: Conflict) -> Dict[str, object]:
     return {
+        "record_id": conflict.record_id,
         "qb_chart_of_account": conflict.qb_chart_of_account,
         "excel_chart_of_account": conflict.excel_chart_of_account,
         "qb_amount": conflict.qb_amount,
         "excel_amount": conflict.excel_amount,
-        "qb_memo": conflict.qb_memo,
-        "excel_memo": conflict.excel_memo,
         "reason": conflict.reason,
     }
 
 
 def _missing_in_excel_conflict(term: MiscIncome) -> Dict[str, object]:
     return {
-        "id": term.memo,
-        "excel_name": None,
-        "qb_name": term.memo,
-        "chart_of_account": term.chart_of_account,
+        "record_id": term.record_id,
+        "qb_chart_of_account": term.chart_of_account,
+        "excel_chart_of_account": None,
+        "qb_amount": term.amount,
+        "excel_amount": None,
         "reason": "missing_in_excel",
     }
 
@@ -56,7 +56,7 @@ def run_misc_income(
         "generated_at": iso_timestamp(),
         "added_misc_income": [],
         "conflicts": [],
-        "matched_count": 0,
+        "same_misc_income": 0,
         "error": None,
     }
 
@@ -65,10 +65,10 @@ def run_misc_income(
         qb_terms = fetch_deposit_lines()
         comparison = compare_excel_qb(excel_terms, qb_terms)
 
-        # 1️⃣ Add Excel-only misc income into QB first
+        # Add Excel-only misc income into QB first
         add_misc_income(comparison.excel_only)
 
-        # 2️⃣ Re-fetch QB terms so that Excel-only items are included
+        # Re-fetch QB terms so that Excel-only items are included
         updated_qb_terms = fetch_deposit_lines()
         updated_comparison = compare_excel_qb(excel_terms, updated_qb_terms)
 
@@ -85,13 +85,13 @@ def run_misc_income(
         ]
         report_payload["conflicts"] = conflicts
 
-        # 3️⃣ Count matched data after adding Excel-only terms
+        # 3Count matched data after adding Excel-only terms
         total_excel = len(excel_terms)
         unmatched = len(updated_comparison.excel_only) + len(
             updated_comparison.conflicts
         )
         matched = total_excel - unmatched
-        report_payload["matched_count"] = max(matched, 0)
+        report_payload["same_misc_income"] = max(matched, 0)
 
     except Exception as exc:
         report_payload["status"] = "error"

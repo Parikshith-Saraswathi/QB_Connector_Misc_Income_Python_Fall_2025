@@ -9,13 +9,13 @@ def mock_excel_terms():
     return [
         MiscIncome(
             amount=100.0,
-            memo="Term 30",
+            record_id="Term 30",
             chart_of_account="Rental",
             source="excel",
         ),
         MiscIncome(
             amount=200.0,
-            memo="Term 45",
+            record_id="Term 45",
             chart_of_account="Net 45",
             source="excel",
         ),
@@ -27,15 +27,15 @@ def test_misc_income_attributes(mock_excel_terms):
     term = mock_excel_terms[0]
 
     assert term.amount == 100.0
-    assert term.memo == "Term 30"
+    assert term.record_id == "Term 30"
     assert term.chart_of_account == "Rental"
     assert term.source == "excel"
     assert term.customer_name == "Default Customer"  # Default value from the class
 
     # Test string representation
     expected_str = (
-        "MiscIncome(amount=100.0, customer_name='Default Customer', "
+        "MiscIncome(record_id='Term 30', amount=100.0, customer_name='Default Customer', "
         "chart_of_account='Rental', "
-        "memo='Term 30', source='excel')"
+        "source='excel')"
     )
     assert str(term) == expected_str

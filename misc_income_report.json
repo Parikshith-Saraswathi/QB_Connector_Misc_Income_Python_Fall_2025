@@ -1,25 +1,33 @@
 {
   "status": "success",
-  "generated_at": "2025-12-01T19:21:16.335892+00:00",
-  "added_misc_income": [],
+  "generated_at": "2025-12-01T20:11:30.040897+00:00",
+  "added_misc_income": [
+    {
+      "record_id": "7779",
+      "amount": 900.0,
+      "chart_of_account": "Taxes-Property",
+      "source": "excel",
+      "customer_name": "Default Customer"
+    }
+  ],
   "conflicts": [
     {
-      "qb_chart_of_account": "Sales",
-      "excel_chart_of_account": "Shareholder Distributions",
+      "record_id": "7777",
+      "qb_chart_of_account": "Shareholder Distributions",
+      "excel_chart_of_account": "Rental",
       "qb_amount": 900.0,
-      "excel_amount": 900.0,
-      "qb_memo": "7777",
-      "excel_memo": "7777",
-      "reason": "chart_of_account_name_mismatch"
+      "excel_amount": 700.0,
+      "reason": "Data_mismatch"
     },
     {
-      "id": "12",
-      "excel_name": null,
-      "qb_name": "12",
-      "chart_of_account": "Misc Credits",
+      "record_id": "123",
+      "qb_chart_of_account": "Misc Credits",
+      "excel_chart_of_account": null,
+      "qb_amount": 500.0,
+      "excel_amount": null,
       "reason": "missing_in_excel"
     }
   ],
-  "matched_count": 3,
+  "same_misc_income": 4,
   "error": null
 }

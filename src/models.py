@@ -8,35 +8,34 @@ ConflictReason = Literal["name_mismatch", "missing_in_excel", "missing_in_quickb
 
 @dataclass(slots=True)
 class MiscIncome:
+    record_id: str
     amount: float
     chart_of_account: str
-    memo: str
     source: SourceLiteral
     customer_name: str = "Default Customer"
 
     def __str__(self):
         return (
-            f"MiscIncome(amount={self.amount}, customer_name='{self.customer_name}', "
+            f"MiscIncome(record_id='{self.record_id}', amount={self.amount}, customer_name='{self.customer_name}', "
             f"chart_of_account='{self.chart_of_account}', "
-            f"memo='{self.memo}', source='{self.source}')"
+            f"source='{self.source}')"
         )
 
 
 @dataclass(slots=True)
 class Conflict:
+    record_id: str
     qb_chart_of_account: str
     excel_chart_of_account: str | None
     qb_amount: float | None
     excel_amount: float | None
-    qb_memo: str | None
-    excel_memo: str | None
     reason: ConflictReason
 
     def __str__(self):
         return (
-            f"Conflict(qb_chart_of_account='{self.qb_chart_of_account}', excel_chart_of_account='{self.excel_chart_of_account}', "
+            f"Conflict(record_id='{self.record_id}' qb_chart_of_account='{self.qb_chart_of_account}', excel_chart_of_account='{self.excel_chart_of_account}', "
             f"qb_amount={self.qb_amount}, excel_amount={self.excel_amount}, "
-            f"qb_memo={self.qb_memo}, excel_memo={self.excel_memo} reason='{self.reason}')"
+            f"reason='{self.reason}')"
         )
 
 
