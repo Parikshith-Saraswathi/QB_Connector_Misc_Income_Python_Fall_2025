@@ -40,16 +40,20 @@ def _missing_in_excel_conflict(term: MiscIncome) -> Dict[str, object]:
     }
 
 
-def run_misc_income(workbook_path: str, *, output_path: str | None = None) -> Path:
+def run_misc_income(
+    workbook_path: str,
+    *,
+    output_path: str | None = None,
+) -> Path:
+    """Contract entry point for synchronising misc income."""
 
     report_path = Path(output_path) if output_path else Path(DEFAULT_REPORT_NAME)
-
     report_payload: Dict[str, object] = {
         "status": "success",
         "generated_at": iso_timestamp(),
         "added_misc_income": [],
         "conflicts": [],
-        "match_count": 0,  # <── NEW FIELD
+        "matched_count": 0,
         "error": None,
     }
 
@@ -58,18 +62,29 @@ def run_misc_income(workbook_path: str, *, output_path: str | None = None) -> Pa
         qb_terms = fetch_deposit_lines()
         comparison = compare_excel_qb(excel_terms, qb_terms)
 
-        # Add Excel-only to QB
+        # 1️⃣ Add Excel-only misc income into QB first
         add_misc_income(comparison.excel_only)
 
-        conflicts: List[Dict[str, object]] = []
-        conflicts.extend(_conflict_to_dict(c) for c in comparison.conflicts)
-        conflicts.extend(_missing_in_excel_conflict(t) for t in comparison.qb_only)
+        # 2️⃣ Re-fetch QB terms so that Excel-only items are included
+        updated_qb_terms = fetch_deposit_lines()
+        updated_comparison = compare_excel_qb(excel_terms, updated_qb_terms)
 
+        # Conflict collection (after adding Excel-only)
+        conflicts: List[Dict[str, object]] = []
+        conflicts.extend(_conflict_to_dict(c) for c in updated_comparison.conflicts)
+        conflicts.extend(_missing_in_excel_conflict(t) for t in updated_comparison.qb_only)
+
+        # Add sections to report
         report_payload["added_misc_income"] = [
             dataclasses.asdict(item) for item in comparison.excel_only
         ]
         report_payload["conflicts"] = conflicts
-        report_payload["match_count"] = comparison.match_count  # <── DIRECT FROM COMPARER
+
+        # 3️⃣ Count matched data after adding Excel-only terms
+        total_excel = len(excel_terms)
+        unmatched = len(updated_comparison.excel_only) + len(updated_comparison.conflicts)
+        matched = total_excel - unmatched
+        report_payload["matched_count"] = max(matched, 0)
 
     except Exception as exc:
         report_payload["status"] = "error"

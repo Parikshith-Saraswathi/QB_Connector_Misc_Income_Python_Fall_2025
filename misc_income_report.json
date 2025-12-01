@@ -1,29 +1,22 @@
 {
   "status": "success",
-  "generated_at": "2025-12-01T16:39:02.047787+00:00",
+  "generated_at": "2025-12-01T18:46:34.502955+00:00",
   "added_misc_income": [],
   "conflicts": [
     {
-      "chart_of_account": "Rental",
-      "excel_name": "amount: 600.0, memo: 7777, chart_of_account: Rental",
-      "qb_name": "amount: 500.0, memo: 7777 , chart_of_account: Sales",
+      "chart_of_account": "Sales",
+      "excel_name": "amount: 900.0, memo: 7777, chart_of_account: Sales",
+      "qb_name": "amount: 600.0, memo: 7777 , chart_of_account: Rental",
       "reason": "data_mismatch"
     },
     {
-      "id": "2222",
+      "id": "1234",
       "excel_name": null,
-      "qb_name": "2222",
+      "qb_name": "1234",
       "chart_of_account": "Misc Income",
-      "reason": "missing_in_excel"
-    },
-    {
-      "id": "7653",
-      "excel_name": null,
-      "qb_name": "7653",
-      "chart_of_account": "Rental",
       "reason": "missing_in_excel"
     }
   ],
-  "match_count": 2,
+  "matched_count": 2,
   "error": null
 }
