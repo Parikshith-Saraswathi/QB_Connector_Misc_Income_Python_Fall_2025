@@ -1,166 +1,167 @@
 {
-    "excel_only": [],
-    "qb_only": [
+    "excel_only": [
         {
-            "amount": 20000.0,
-            "chart_of_account": "Undeposited Funds",
-            "memo": "",
-            "source": "quickbooks",
-            "customer_name": "Inventory Asset"
+            "amount": 4151.91,
+            "chart_of_account": "Shareholder Distributions",
+            "memo": "7734",
+            "source": "excel",
+            "customer_name": "Default Customer"
         },
         {
-            "amount": 654.0,
-            "chart_of_account": "Inventory Asset",
-            "memo": "Memo test",
-            "source": "quickbooks",
-            "customer_name": "Chase"
+            "amount": 1303.69,
+            "chart_of_account": "Shareholder Distributions",
+            "memo": "7735",
+            "source": "excel",
+            "customer_name": "Default Customer"
         },
         {
-            "amount": 2500.0,
-            "chart_of_account": "Sales",
-            "memo": "365",
-            "source": "quickbooks",
-            "customer_name": "Inventory Asset"
-        },
-        {
-            "amount": 0.0,
-            "chart_of_account": "",
-            "memo": "",
-            "source": "quickbooks",
-            "customer_name": "Chase"
-        },
-        {
-            "amount": 45.0,
-            "chart_of_account": "Furniture and Equipment",
+            "amount": 5120.73,
+            "chart_of_account": "Shareholder Distributions",
             "memo": "7736",
-            "source": "quickbooks",
-            "customer_name": "Chase"
+            "source": "excel",
+            "customer_name": "Default Customer"
         },
         {
-            "amount": 632.0,
-            "chart_of_account": "Members Equity",
-            "memo": "345",
-            "source": "quickbooks",
-            "customer_name": "Chase"
+            "amount": 0.01,
+            "chart_of_account": "Sales",
+            "memo": "7915",
+            "source": "excel",
+            "customer_name": "Default Customer"
         },
         {
-            "amount": 250.0,
-            "chart_of_account": "Misc Income",
-            "memo": "",
-            "source": "quickbooks",
-            "customer_name": "Chase"
+            "amount": 270.0,
+            "chart_of_account": "Taxes-Property",
+            "memo": "7995",
+            "source": "excel",
+            "customer_name": "Default Customer"
         },
         {
-            "amount": 150.0,
-            "chart_of_account": "Misc Income",
-            "memo": "2",
-            "source": "quickbooks",
-            "customer_name": "Chase"
-        },
-        {
-            "amount": 15.25,
-            "chart_of_account": "Misc Income",
-            "memo": "3",
-            "source": "quickbooks",
-            "customer_name": "Chase"
-        },
-        {
-            "amount": 16.25,
-            "chart_of_account": "Misc Income",
-            "memo": "4",
-            "source": "quickbooks",
-            "customer_name": "Chase"
-        },
-        {
-            "amount": 17.25,
-            "chart_of_account": "Misc Income",
-            "memo": "5",
-            "source": "quickbooks",
-            "customer_name": "Chase"
-        },
-        {
-            "amount": 78.52,
-            "chart_of_account": "Misc Income",
-            "memo": "6",
-            "source": "quickbooks",
-            "customer_name": "Chase"
-        },
-        {
-            "amount": 35.63,
-            "chart_of_account": "Misc Income",
-            "memo": "51",
-            "source": "quickbooks",
-            "customer_name": "Chase"
-        },
-        {
-            "amount": 78.32,
-            "chart_of_account": "Misc Income",
-            "memo": "61",
-            "source": "quickbooks",
-            "customer_name": "Chase"
-        },
-        {
-            "amount": 74.21,
-            "chart_of_account": "Misc Income",
-            "memo": "62",
-            "source": "quickbooks",
-            "customer_name": "Chase"
-        },
-        {
-            "amount": 45.67,
+            "amount": 2400.0,
             "chart_of_account": "Rental",
-            "memo": "63",
-            "source": "quickbooks",
-            "customer_name": "Chase"
+            "memo": "7317",
+            "source": "excel",
+            "customer_name": "Default Customer"
         },
         {
-            "amount": 21.45,
+            "amount": 2400.0,
+            "chart_of_account": "Rental",
+            "memo": "7392",
+            "source": "excel",
+            "customer_name": "Default Customer"
+        },
+        {
+            "amount": 2400.0,
+            "chart_of_account": "Rental",
+            "memo": "7397",
+            "source": "excel",
+            "customer_name": "Default Customer"
+        },
+        {
+            "amount": 2400.0,
+            "chart_of_account": "Rental",
+            "memo": "7484",
+            "source": "excel",
+            "customer_name": "Default Customer"
+        },
+        {
+            "amount": 2400.0,
+            "chart_of_account": "Rental",
+            "memo": "7539",
+            "source": "excel",
+            "customer_name": "Default Customer"
+        },
+        {
+            "amount": 2400.0,
+            "chart_of_account": "Rental",
+            "memo": "7606",
+            "source": "excel",
+            "customer_name": "Default Customer"
+        },
+        {
+            "amount": 2400.0,
+            "chart_of_account": "Rental",
+            "memo": "7653",
+            "source": "excel",
+            "customer_name": "Default Customer"
+        },
+        {
+            "amount": 2400.0,
+            "chart_of_account": "Rental",
+            "memo": "7721",
+            "source": "excel",
+            "customer_name": "Default Customer"
+        },
+        {
+            "amount": 2400.0,
+            "chart_of_account": "Rental",
+            "memo": "7827",
+            "source": "excel",
+            "customer_name": "Default Customer"
+        },
+        {
+            "amount": 2400.0,
+            "chart_of_account": "Rental",
+            "memo": "7866",
+            "source": "excel",
+            "customer_name": "Default Customer"
+        },
+        {
+            "amount": 2400.0,
+            "chart_of_account": "Rental",
+            "memo": "7898",
+            "source": "excel",
+            "customer_name": "Default Customer"
+        },
+        {
+            "amount": 2400.0,
+            "chart_of_account": "Rental",
+            "memo": "7970",
+            "source": "excel",
+            "customer_name": "Default Customer"
+        },
+        {
+            "amount": 4187.5,
             "chart_of_account": "Misc Credits",
-            "memo": "64",
-            "source": "quickbooks",
-            "customer_name": "Chase"
+            "memo": "7393",
+            "source": "excel",
+            "customer_name": "Default Customer"
         },
         {
-            "amount": 0.0,
-            "chart_of_account": "Rental",
-            "memo": "",
-            "source": "quickbooks",
-            "customer_name": "Chase"
-        },
-        {
-            "amount": 21.23,
-            "chart_of_account": "Rental",
-            "memo": "65",
-            "source": "quickbooks",
-            "customer_name": "Chase"
-        },
-        {
-            "amount": 32.01,
+            "amount": 275.0,
             "chart_of_account": "Misc Credits",
-            "memo": "66",
-            "source": "quickbooks",
-            "customer_name": "Chase"
+            "memo": "7423",
+            "source": "excel",
+            "customer_name": "Default Customer"
         },
         {
-            "amount": 200.0,
-            "chart_of_account": "Rental",
-            "memo": "8520",
-            "source": "quickbooks",
-            "customer_name": "Chase"
+            "amount": 4895.72,
+            "chart_of_account": "Misc Credits",
+            "memo": "7426",
+            "source": "excel",
+            "customer_name": "Default Customer"
+        },
+        {
+            "amount": 20077.5,
+            "chart_of_account": "Misc Credits",
+            "memo": "7485",
+            "source": "excel",
+            "customer_name": "Default Customer"
+        },
+        {
+            "amount": 22659.45,
+            "chart_of_account": "Misc Credits",
+            "memo": "7613",
+            "source": "excel",
+            "customer_name": "Default Customer"
+        },
+        {
+            "amount": 7452.0,
+            "chart_of_account": "Misc Credits",
+            "memo": "7974",
+            "source": "excel",
+            "customer_name": "Default Customer"
         }
     ],
-    "conflicts": [
-        {
-            "chart_of_account": "Misc Credits",
-            "excel_name": "amount: 7452.0, memo: 7974",
-            "qb_name": "amount: 8282.66, memo: 7974",
-            "reason": "amount_mismatch"
-        },
-        {
-            "chart_of_account": "Rental",
-            "excel_name": "amount: 800.0, memo: 7976",
-            "qb_name": "amount: 700.0, memo: 7976",
-            "reason": "amount_mismatch"
-        }
-    ]
+    "qb_only": [],
+    "conflicts": []
 }

@@ -1,189 +1,29 @@
 {
   "status": "success",
-  "generated_at": "2025-11-19T20:17:35.672815+00:00",
+  "generated_at": "2025-12-01T16:39:02.047787+00:00",
   "added_misc_income": [],
   "conflicts": [
     {
-      "chart_of_account": "Misc Credits",
-      "excel_name": "amount: 7452.0, memo: 7974, chart_of_account: Misc Credits",
-      "qb_name": "amount: 8282.66, memo: 7974 , chart_of_account: Misc Credits",
+      "chart_of_account": "Rental",
+      "excel_name": "amount: 600.0, memo: 7777, chart_of_account: Rental",
+      "qb_name": "amount: 500.0, memo: 7777 , chart_of_account: Sales",
       "reason": "data_mismatch"
     },
     {
-      "id": "",
+      "id": "2222",
       "excel_name": null,
-      "qb_name": "",
-      "chart_of_account": "Undeposited Funds",
-      "reason": "missing_in_excel"
-    },
-    {
-      "id": "Memo test",
-      "excel_name": null,
-      "qb_name": "Memo test",
-      "chart_of_account": "Inventory Asset",
-      "reason": "missing_in_excel"
-    },
-    {
-      "id": "365",
-      "excel_name": null,
-      "qb_name": "365",
-      "chart_of_account": "Sales",
-      "reason": "missing_in_excel"
-    },
-    {
-      "id": "",
-      "excel_name": null,
-      "qb_name": "",
-      "chart_of_account": "",
-      "reason": "missing_in_excel"
-    },
-    {
-      "id": "7736",
-      "excel_name": null,
-      "qb_name": "7736",
-      "chart_of_account": "Furniture and Equipment",
-      "reason": "missing_in_excel"
-    },
-    {
-      "id": "345",
-      "excel_name": null,
-      "qb_name": "345",
-      "chart_of_account": "Members Equity",
-      "reason": "missing_in_excel"
-    },
-    {
-      "id": "",
-      "excel_name": null,
-      "qb_name": "",
+      "qb_name": "2222",
       "chart_of_account": "Misc Income",
       "reason": "missing_in_excel"
     },
     {
-      "id": "2",
+      "id": "7653",
       "excel_name": null,
-      "qb_name": "2",
-      "chart_of_account": "Misc Income",
-      "reason": "missing_in_excel"
-    },
-    {
-      "id": "3",
-      "excel_name": null,
-      "qb_name": "3",
-      "chart_of_account": "Misc Income",
-      "reason": "missing_in_excel"
-    },
-    {
-      "id": "4",
-      "excel_name": null,
-      "qb_name": "4",
-      "chart_of_account": "Misc Income",
-      "reason": "missing_in_excel"
-    },
-    {
-      "id": "5",
-      "excel_name": null,
-      "qb_name": "5",
-      "chart_of_account": "Misc Income",
-      "reason": "missing_in_excel"
-    },
-    {
-      "id": "6",
-      "excel_name": null,
-      "qb_name": "6",
-      "chart_of_account": "Misc Income",
-      "reason": "missing_in_excel"
-    },
-    {
-      "id": "51",
-      "excel_name": null,
-      "qb_name": "51",
-      "chart_of_account": "Misc Income",
-      "reason": "missing_in_excel"
-    },
-    {
-      "id": "61",
-      "excel_name": null,
-      "qb_name": "61",
-      "chart_of_account": "Misc Income",
-      "reason": "missing_in_excel"
-    },
-    {
-      "id": "62",
-      "excel_name": null,
-      "qb_name": "62",
-      "chart_of_account": "Misc Income",
-      "reason": "missing_in_excel"
-    },
-    {
-      "id": "63",
-      "excel_name": null,
-      "qb_name": "63",
-      "chart_of_account": "Rental",
-      "reason": "missing_in_excel"
-    },
-    {
-      "id": "64",
-      "excel_name": null,
-      "qb_name": "64",
-      "chart_of_account": "Misc Credits",
-      "reason": "missing_in_excel"
-    },
-    {
-      "id": "",
-      "excel_name": null,
-      "qb_name": "",
-      "chart_of_account": "Rental",
-      "reason": "missing_in_excel"
-    },
-    {
-      "id": "65",
-      "excel_name": null,
-      "qb_name": "65",
-      "chart_of_account": "Rental",
-      "reason": "missing_in_excel"
-    },
-    {
-      "id": "66",
-      "excel_name": null,
-      "qb_name": "66",
-      "chart_of_account": "Misc Credits",
-      "reason": "missing_in_excel"
-    },
-    {
-      "id": "8520",
-      "excel_name": null,
-      "qb_name": "8520",
-      "chart_of_account": "Rental",
-      "reason": "missing_in_excel"
-    },
-    {
-      "id": "7976",
-      "excel_name": null,
-      "qb_name": "7976",
-      "chart_of_account": "Rental",
-      "reason": "missing_in_excel"
-    },
-    {
-      "id": "7977",
-      "excel_name": null,
-      "qb_name": "7977",
-      "chart_of_account": "Rental",
-      "reason": "missing_in_excel"
-    },
-    {
-      "id": "7978",
-      "excel_name": null,
-      "qb_name": "7978",
-      "chart_of_account": "Rental",
-      "reason": "missing_in_excel"
-    },
-    {
-      "id": "7979",
-      "excel_name": null,
-      "qb_name": "7979",
+      "qb_name": "7653",
       "chart_of_account": "Rental",
       "reason": "missing_in_excel"
     }
   ],
+  "match_count": 2,
   "error": null
 }
