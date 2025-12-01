@@ -24,15 +24,19 @@ class MiscIncome:
 
 @dataclass(slots=True)
 class Conflict:
-    chart_of_account: str
-    excel_name: str | None
-    qb_name: str | None
+    qb_chart_of_account: str
+    excel_chart_of_account: str | None
+    qb_amount: float | None
+    excel_amount: float | None
+    qb_memo: str | None
+    excel_memo: str | None
     reason: ConflictReason
 
     def __str__(self):
         return (
-            f"Conflict(chart_of_account='{self.chart_of_account}', "
-            f"excel_name='{self.excel_name}', qb_name='{self.qb_name}', reason='{self.reason}')"
+            f"Conflict(qb_chart_of_account='{self.qb_chart_of_account}', excel_chart_of_account='{self.excel_chart_of_account}', "
+            f"qb_amount={self.qb_amount}, excel_amount={self.excel_amount}, "
+            f"qb_memo={self.qb_memo}, excel_memo={self.excel_memo} reason='{self.reason}')"
         )
 
 
@@ -41,4 +45,4 @@ class ComparisonReport:
     excel_only: list[MiscIncome] = field(default_factory=list)
     qb_only: list[MiscIncome] = field(default_factory=list)
     conflicts: list[Conflict] = field(default_factory=list)
-    match_count: int = 0  # <── NEW FIELD
+    match_count: int = 0

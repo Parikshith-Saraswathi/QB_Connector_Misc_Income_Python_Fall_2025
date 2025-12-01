@@ -23,9 +23,12 @@ def _term_to_dict(term: MiscIncome) -> Dict[str, str]:
 
 def _conflict_to_dict(conflict: Conflict) -> Dict[str, object]:
     return {
-        "chart_of_account": conflict.chart_of_account,
-        "excel_name": conflict.excel_name,
-        "qb_name": conflict.qb_name,
+        "qb_chart_of_account": conflict.qb_chart_of_account,
+        "excel_chart_of_account": conflict.excel_chart_of_account,
+        "qb_amount": conflict.qb_amount,
+        "excel_amount": conflict.excel_amount,
+        "qb_memo": conflict.qb_memo,
+        "excel_memo": conflict.excel_memo,
         "reason": conflict.reason,
     }
 
@@ -72,7 +75,9 @@ def run_misc_income(
         # Conflict collection (after adding Excel-only)
         conflicts: List[Dict[str, object]] = []
         conflicts.extend(_conflict_to_dict(c) for c in updated_comparison.conflicts)
-        conflicts.extend(_missing_in_excel_conflict(t) for t in updated_comparison.qb_only)
+        conflicts.extend(
+            _missing_in_excel_conflict(t) for t in updated_comparison.qb_only
+        )
 
         # Add sections to report
         report_payload["added_misc_income"] = [
@@ -82,7 +87,9 @@ def run_misc_income(
 
         # 3️⃣ Count matched data after adding Excel-only terms
         total_excel = len(excel_terms)
-        unmatched = len(updated_comparison.excel_only) + len(updated_comparison.conflicts)
+        unmatched = len(updated_comparison.excel_only) + len(
+            updated_comparison.conflicts
+        )
         matched = total_excel - unmatched
         report_payload["matched_count"] = max(matched, 0)
 

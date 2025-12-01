@@ -5,15 +5,15 @@ import json
 
 from models import MiscIncome, ComparisonReport, Conflict
 from excel_reader import extract_deposits
-from qb_reader import fetch_deposit_lines  # your QB code
-from qb_adder import add_misc_income  # your QB code
+from qb_reader import fetch_deposit_lines
+from qb_adder import add_misc_income
 
 
 def compare_excel_qb(excel_data, qb_data) -> ComparisonReport:
     """Compare Excel data with QuickBooks data."""
 
     report = ComparisonReport()
-    report.match_count = 0  # <── NEW FIELD CREATED HERE
+    report.match_count = 0
 
     def _key(item: MiscIncome) -> str:
         return f"{item.memo}"
@@ -31,16 +31,20 @@ def compare_excel_qb(excel_data, qb_data) -> ComparisonReport:
             # Check for perfect match
             if (
                 abs(float(excel_item.amount) - float(qb_item.amount)) < 0.001
+                and excel_item.chart_of_account == qb_item.chart_of_account
                 and excel_item.memo == qb_item.memo
             ):
-                report.match_count += 1  # <── COUNT MATCH
+                report.match_count += 1
             else:
                 report.conflicts.append(
                     Conflict(
-                        chart_of_account=excel_item.chart_of_account,
-                        excel_name=f"amount: {excel_item.amount}, memo: {excel_item.memo}, chart_of_account: {excel_item.chart_of_account}",
-                        qb_name=f"amount: {qb_item.amount}, memo: {qb_item.memo} , chart_of_account: {qb_item.chart_of_account}",
-                        reason="data_mismatch",
+                        qb_chart_of_account=qb_item.chart_of_account,
+                        excel_chart_of_account=excel_item.chart_of_account,
+                        qb_amount=qb_item.amount,
+                        excel_amount=excel_item.amount,
+                        qb_memo=qb_item.memo,
+                        excel_memo=excel_item.memo,
+                        reason="Data_mismatch",
                     )
                 )
 
