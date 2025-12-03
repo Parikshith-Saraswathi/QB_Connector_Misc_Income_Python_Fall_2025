@@ -43,7 +43,7 @@ def compare_excel_qb(excel_data, qb_data) -> ComparisonReport:
                         excel_chart_of_account=excel_item.chart_of_account,
                         qb_amount=qb_item.amount,
                         excel_amount=excel_item.amount,
-                        reason="Data_mismatch",
+                        reason="data_mismatch",
                     )
                 )
 
@@ -87,4 +87,7 @@ if __name__ == "__main__":
 
     print("\nComparison report saved to comparison_report.json")
 
-    add_misc_income(report.excel_only)
+    from src.input_settings import InputSettings
+
+    settings = InputSettings()
+    add_misc_income(report.excel_only, settings)
