@@ -1,8 +1,8 @@
 import xml.etree.ElementTree as ET
-from .models import MiscIncome
+from models import MiscIncome
 from contextlib import contextmanager
 from typing import Iterator, List
-from .input_settings import InputSettings
+from input_settings import InputSettings
 
 try:
     import win32com.client  # type: ignore
@@ -80,13 +80,13 @@ def add_misc_income(miscIncome: list[MiscIncome]) -> list[MiscIncome]:
             f"    <DepositAddRq>\n"
             f"      <DepositAdd>\n"
             f"        <DepositToAccountRef>\n"
-            f"          <FullName>{_escape_xml(settings.bank_account)}</FullName>\n"
+            f"          <FullName>{_escape_xml(str(settings.bank_account))}</FullName>\n"
             f"        </DepositToAccountRef>\n"
             f"        <DepositLineAdd>\n"
             f"          <AccountRef>\n"
-            f"            <FullName>{_escape_xml(income.chart_of_account)}</FullName>\n"
+            f"            <FullName>{_escape_xml(str(income.chart_of_account))}</FullName>\n"
             f"          </AccountRef>\n"
-            f"          <Memo>{_escape_xml(income.memo)}</Memo>\n"
+            f"          <Memo>{_escape_xml(str(income.record_id))}</Memo>\n"
             f"          <Amount>{miscAmount:.2f}</Amount>\n"
             f"        </DepositLineAdd>\n"
             f"      </DepositAdd>\n"
@@ -128,7 +128,7 @@ def add_misc_income(miscIncome: list[MiscIncome]) -> list[MiscIncome]:
             MiscIncome(
                 amount=float(amount) if amount else 0.0,
                 chart_of_account=str(customer_name),
-                memo=str(memo),
+                record_id=str(memo),
                 source="quickbooks",
             )
         )
@@ -168,12 +168,12 @@ if __name__ == "__main__":
     # Example usage: add multiple misc incomes
     test_incomes = [
         MiscIncome(
-            amount=50.23, chart_of_account="Sales", memo="65", source="quickbooks"
+            amount=50.23, chart_of_account="Sales", record_id="65", source="quickbooks"
         ),
         MiscIncome(
             amount=40.01,
             chart_of_account="Misc Credits",
-            memo="66",
+            record_id="66",
             source="quickbooks",
         ),
     ]
@@ -186,8 +186,8 @@ if __name__ == "__main__":
         assert income.chart_of_account == test_income.chart_of_account, (
             f"Chart of Account mismatch: expected {test_income.chart_of_account}, got {income.chart_of_account}"
         )
-        assert income.memo == test_income.memo, (
-            f"Memo mismatch: expected {test_income.memo}, got {income.memo}"
+        assert income.record_id == test_income.record_id, (
+            f"Memo(Record Id) mismatch: expected {test_income.record_id}, got {income.record_id}"
         )
         assert income.source == test_income.source, (
             f"Source mismatch: expected {test_income.source}, got {income.source}"

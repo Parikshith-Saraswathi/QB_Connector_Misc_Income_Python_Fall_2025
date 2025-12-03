@@ -1,4 +1,172 @@
 {
+    "excel_only": [
+        {
+            "amount": 4151.91,
+            "chart_of_account": "Shareholder Distributions",
+            "memo": "7734",
+            "source": "excel",
+            "customer_name": "Default Customer"
+        },
+        {
+            "amount": 1303.69,
+            "chart_of_account": "Shareholder Distributions",
+            "memo": "7735",
+            "source": "excel",
+            "customer_name": "Default Customer"
+        },
+        {
+            "amount": 5120.73,
+            "chart_of_account": "Shareholder Distributions",
+            "memo": "7736",
+            "source": "excel",
+            "customer_name": "Default Customer"
+        },
+        {
+            "amount": 0.01,
+            "chart_of_account": "Sales",
+            "memo": "7915",
+            "source": "excel",
+            "customer_name": "Default Customer"
+        },
+        {
+            "amount": 270.0,
+            "chart_of_account": "Taxes-Property",
+            "memo": "7995",
+            "source": "excel",
+            "customer_name": "Default Customer"
+        },
+        {
+            "amount": 2400.0,
+            "chart_of_account": "Rental",
+            "memo": "7317",
+            "source": "excel",
+            "customer_name": "Default Customer"
+        },
+        {
+            "amount": 2400.0,
+            "chart_of_account": "Rental",
+            "memo": "7392",
+            "source": "excel",
+            "customer_name": "Default Customer"
+        },
+        {
+            "amount": 2400.0,
+            "chart_of_account": "Rental",
+            "memo": "7397",
+            "source": "excel",
+            "customer_name": "Default Customer"
+        },
+        {
+            "amount": 2400.0,
+            "chart_of_account": "Rental",
+            "memo": "7484",
+            "source": "excel",
+            "customer_name": "Default Customer"
+        },
+        {
+            "amount": 2400.0,
+            "chart_of_account": "Rental",
+            "memo": "7539",
+            "source": "excel",
+            "customer_name": "Default Customer"
+        },
+        {
+            "amount": 2400.0,
+            "chart_of_account": "Rental",
+            "memo": "7606",
+            "source": "excel",
+            "customer_name": "Default Customer"
+        },
+        {
+            "amount": 2400.0,
+            "chart_of_account": "Rental",
+            "memo": "7653",
+            "source": "excel",
+            "customer_name": "Default Customer"
+        },
+        {
+            "amount": 2400.0,
+            "chart_of_account": "Rental",
+            "memo": "7721",
+            "source": "excel",
+            "customer_name": "Default Customer"
+        },
+        {
+            "amount": 2400.0,
+            "chart_of_account": "Rental",
+            "memo": "7827",
+            "source": "excel",
+            "customer_name": "Default Customer"
+        },
+        {
+            "amount": 2400.0,
+            "chart_of_account": "Rental",
+            "memo": "7866",
+            "source": "excel",
+            "customer_name": "Default Customer"
+        },
+        {
+            "amount": 2400.0,
+            "chart_of_account": "Rental",
+            "memo": "7898",
+            "source": "excel",
+            "customer_name": "Default Customer"
+        },
+        {
+            "amount": 2400.0,
+            "chart_of_account": "Rental",
+            "memo": "7970",
+            "source": "excel",
+            "customer_name": "Default Customer"
+        },
+        {
+            "amount": 4187.5,
+            "chart_of_account": "Misc Credits",
+            "memo": "7393",
+            "source": "excel",
+            "customer_name": "Default Customer"
+        },
+        {
+            "amount": 275.0,
+            "chart_of_account": "Misc Credits",
+            "memo": "7423",
+            "source": "excel",
+            "customer_name": "Default Customer"
+        },
+        {
+            "amount": 4895.72,
+            "chart_of_account": "Misc Credits",
+            "memo": "7426",
+            "source": "excel",
+            "customer_name": "Default Customer"
+        },
+        {
+            "amount": 20077.5,
+            "chart_of_account": "Misc Credits",
+            "memo": "7485",
+            "source": "excel",
+            "customer_name": "Default Customer"
+        },
+        {
+            "amount": 22659.45,
+            "chart_of_account": "Misc Credits",
+            "memo": "7613",
+            "source": "excel",
+            "customer_name": "Default Customer"
+        },
+        {
+            "amount": 7452.0,
+            "chart_of_account": "Misc Credits",
+            "memo": "7974",
+            "source": "excel",
+            "customer_name": "Default Customer"
+        }
+    ],
+    "qb_only": [],
+    "conflicts": []
+}
+
+{
   "status": "success",
   "generated_at": "2025-11-19T19:57:42.030199+00:00",
   "added_terms": [],

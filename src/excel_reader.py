@@ -38,7 +38,7 @@ def extract_deposits(workbook_path: Path) -> List[MiscIncome]:
         records.append(
             MiscIncome(
                 amount=amount_,
-                memo=memo_,
+                record_id=memo_,
                 chart_of_account=chart_of_account_,
                 source="excel",
             )
