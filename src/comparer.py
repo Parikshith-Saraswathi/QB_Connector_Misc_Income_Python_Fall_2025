@@ -43,7 +43,7 @@ def compare_excel_qb(excel_data, qb_data) -> ComparisonReport:
                         excel_chart_of_account=excel_item.chart_of_account,
                         qb_amount=qb_item.amount,
                         excel_amount=excel_item.amount,
-                        reason="name_mismatch",
+                        reason="data_mismatch",
                     )
                 )
 
