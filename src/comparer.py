@@ -4,9 +4,10 @@ import dataclasses
 import json
 from datetime import datetime, timezone
 
-from models import MiscIncome, ComparisonReport, Conflict
-from excel_reader import extract_deposits
-from qb_reader import fetch_deposit_lines, _send_qbxml
+from src.models import MiscIncome, ComparisonReport, Conflict
+from src.excel_reader import extract_deposits
+from src.qb_reader import fetch_deposit_lines
+from src.qb_adder import add_misc_income
 
 
 def compare_excel_qb(excel_data, qb_data) -> ComparisonReport:

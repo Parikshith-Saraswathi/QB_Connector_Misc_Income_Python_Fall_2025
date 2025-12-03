@@ -1,5 +1,5 @@
 import xml.etree.ElementTree as ET
-from models import MiscIncome
+from src.models import MiscIncome
 from contextlib import contextmanager
 from typing import Iterator
 
@@ -71,12 +71,8 @@ def fetch_deposit_lines() -> list[MiscIncome]:
     for detail in root.findall(".//DepositQueryRs/DepositRet"):
         amount = detail.findtext("DepositTotal") or "0.0"
         deposit_to_account = detail.findtext("DepositToAccountRef/FullName") or ""
-        # listID = detail.findtext("DepositLineRet/AccountRef/ListID")
-        # Only call fetch_account_types if listID exists
         customer_name = detail.findtext("DepositLineRet/AccountRef/FullName") or ""
         memo = detail.findtext("DepositLineRet/Memo") or ""
-        # if detail.find("DepositLineRet/Memo") is not None:
-        #     memo = detail.findtext("DepositLineRet/Memo") or ""
         try:
             misc_income = MiscIncome(
                 amount=float(amount),
