@@ -1,8 +1,8 @@
 import xml.etree.ElementTree as ET
-from models import MiscIncome
+from src.models import MiscIncome
 from contextlib import contextmanager
 from typing import Iterator, List
-from input_settings import InputSettings
+from src.input_settings import InputSettings
 
 try:
     import win32com.client  # type: ignore
