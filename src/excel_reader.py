@@ -2,7 +2,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import List
 from openpyxl import load_workbook
-from models import MiscIncome
+from src.models import MiscIncome
 
 
 def extract_deposits(workbook_path: Path) -> List[MiscIncome]:

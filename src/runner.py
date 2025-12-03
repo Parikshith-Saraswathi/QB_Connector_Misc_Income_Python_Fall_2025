@@ -3,12 +3,12 @@ import dataclasses
 from pathlib import Path
 from typing import Dict, List
 
-from excel_reader import extract_deposits
-from qb_reader import fetch_deposit_lines
-from qb_adder import add_misc_income
-from comparer import compare_excel_qb
-from models import Conflict, MiscIncome
-from reporting import iso_timestamp, write_report
+from .excel_reader import extract_deposits
+from .qb_reader import fetch_deposit_lines
+from .qb_adder import add_misc_income
+from .comparer import compare_excel_qb
+from .models import Conflict, MiscIncome
+from .reporting import iso_timestamp, write_report
 
 DEFAULT_REPORT_NAME = "misc_income_report.json"
 
