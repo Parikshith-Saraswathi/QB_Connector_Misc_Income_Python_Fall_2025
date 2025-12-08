@@ -46,7 +46,7 @@ def _missing_in_excel_conflict(term: MiscIncome) -> Dict[str, object]:
 def run_misc_income(
     workbook_path: Path,
     *,
-    bank_account_json: Path,
+    bank_account_json: Path | str,
     output_path: str | None = None,
 ) -> Path:
     """Contract entry point for synchronising misc income."""
@@ -64,8 +64,18 @@ def run_misc_income(
     from .input_settings import InputSettings
 
     try:
-        # Load bank account settings from JSON
-        settings = InputSettings.load(bank_account_json)
+        # bank_account_json may be a Path pointing to a JSON file (when running
+        # as a python script) or a simple bank account name (string) when the
+        # app is packaged as an exe and called with --bank_account <name>.
+        if (
+            isinstance(bank_account_json, (str,))
+            and not Path(bank_account_json).exists()
+        ):
+            # Treat as a direct bank account name
+            settings = InputSettings(bank_account=bank_account_json)
+        else:
+            # Treat as a path to a JSON settings file
+            settings = InputSettings.load(Path(bank_account_json))
 
         excel_terms = extract_deposits(workbook_path)
         qb_terms = fetch_deposit_lines()

@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from typing import Literal
 
 SourceLiteral = Literal["excel", "quickbooks"]
-ConflictReason = Literal["name_mismatch", "missing_in_excel", "missing_in_quickbooks"]
+ConflictReason = Literal["data_mismatch", "missing_in_excel", "missing_in_quickbooks"]
 
 
 @dataclass(slots=True)
