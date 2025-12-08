@@ -1,6 +1,7 @@
 from __future__ import annotations
 import dataclasses
 from pathlib import Path
+import sys
 from typing import Dict, List
 
 from .excel_reader import extract_deposits
@@ -64,17 +65,16 @@ def run_misc_income(
     from .input_settings import InputSettings
 
     try:
-        # bank_account_json may be a Path pointing to a JSON file (when running
-        # as a python script) or a simple bank account name (string) when the
-        # app is packaged as an exe and called with --bank_account <name>.
-        if (
-            isinstance(bank_account_json, (str,))
-            and not Path(bank_account_json).exists()
+        # If running as a frozen exe, prefer treating the argument as the
+        # bank account name. Otherwise, accept either a JSON path or a
+        # direct bank account name.
+        if getattr(sys, "frozen", False) and isinstance(bank_account_json, str):
+            settings = InputSettings(bank_account=bank_account_json)
+        elif (
+            isinstance(bank_account_json, str) and not Path(bank_account_json).exists()
         ):
-            # Treat as a direct bank account name
             settings = InputSettings(bank_account=bank_account_json)
         else:
-            # Treat as a path to a JSON settings file
             settings = InputSettings.load(Path(bank_account_json))
 
         excel_terms = extract_deposits(workbook_path)
@@ -101,7 +101,7 @@ def run_misc_income(
         ]
         report_payload["conflicts"] = conflicts
 
-        # 3Count matched data after adding Excel-only terms
+        # Count matched data after adding Excel-only terms
         total_excel = len(excel_terms)
         unmatched = len(updated_comparison.excel_only) + len(
             updated_comparison.conflicts
