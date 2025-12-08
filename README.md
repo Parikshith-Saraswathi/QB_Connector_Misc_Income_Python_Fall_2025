@@ -1,5 +1,5 @@
 # Misc Income CLI Template
-## Parikshith Saraswathi, Eduardo Araujo 
+## Parikshith Saraswathi, Eduardo Araujo
 
 ## Setup Project
 Once you forked and cloned the repo, run:
