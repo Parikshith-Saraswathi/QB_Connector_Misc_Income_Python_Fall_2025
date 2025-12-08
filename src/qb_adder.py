@@ -11,9 +11,6 @@ except ImportError:  # pragma: no cover
 
 APP_NAME = "Quickbooks Connector"  # do not chanege this
 
-# Load input settings from JSON file
-settings = InputSettings.load()
-
 
 def _require_win32com() -> None:
     if win32com is None:  # pragma: no cover - exercised via tests
@@ -58,7 +55,9 @@ def _parse_response(raw_xml: str) -> ET.Element:
     return root
 
 
-def add_misc_income(miscIncome: list[MiscIncome]) -> list[MiscIncome]:
+def add_misc_income(
+    miscIncome: list[MiscIncome], settings: InputSettings
+) -> list[MiscIncome]:
     """Create multiple Misc Income in QuickBooks in a single batch request."""
 
     if not miscIncome:
@@ -177,7 +176,11 @@ if __name__ == "__main__":
             source="quickbooks",
         ),
     ]
-    added_incomes = add_misc_income(test_incomes)
+    # Example InputSettings for testing
+    from src.input_settings import InputSettings
+
+    settings = InputSettings()
+    added_incomes = add_misc_income(test_incomes, settings)
     # asserting the values which came back from QuickBooks
     for income, test_income in zip(added_incomes, test_incomes):
         assert income.amount == test_income.amount, (

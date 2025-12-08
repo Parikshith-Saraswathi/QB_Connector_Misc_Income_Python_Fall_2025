@@ -44,8 +44,9 @@ def _missing_in_excel_conflict(term: MiscIncome) -> Dict[str, object]:
 
 
 def run_misc_income(
-    workbook_path: str,
+    workbook_path: Path,
     *,
+    bank_account_json: Path,
     output_path: str | None = None,
 ) -> Path:
     """Contract entry point for synchronising misc income."""
@@ -60,19 +61,24 @@ def run_misc_income(
         "error": None,
     }
 
+    from .input_settings import InputSettings
+
     try:
+        # Load bank account settings from JSON
+        settings = InputSettings.load(bank_account_json)
+
         excel_terms = extract_deposits(workbook_path)
         qb_terms = fetch_deposit_lines()
         comparison = compare_excel_qb(excel_terms, qb_terms)
 
         # Add Excel-only misc income into QB first
-        add_misc_income(comparison.excel_only)
+        add_misc_income(comparison.excel_only, settings)
 
         # Re-fetch QB terms so that Excel-only items are included
         updated_qb_terms = fetch_deposit_lines()
         updated_comparison = compare_excel_qb(excel_terms, updated_qb_terms)
 
-        # Conflict collection (after adding Excel-only)
+        # Conflict collection (after adding Excel-only items)
         conflicts: List[Dict[str, object]] = []
         conflicts.extend(_conflict_to_dict(c) for c in updated_comparison.conflicts)
         conflicts.extend(
@@ -106,4 +112,8 @@ __all__ = ["run_misc_income", "DEFAULT_REPORT_NAME"]
 
 if __name__ == "__main__":
     excel_file = Path("company_data.xlsx")
-    run_misc_income(str(excel_file))
+    bank_account_json = Path("src/input_settings.json")
+    run_misc_income(
+        workbook_path=excel_file,
+        bank_account_json=bank_account_json,
+    )

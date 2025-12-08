@@ -17,11 +17,20 @@ def main(argv: list[str] | None = None) -> int:
         required=True,
         help="Excel workbook containing the other income worksheet",
     )
+    parser.add_argument(
+        "--bank_account",
+        required=True,
+        help="Path to JSON file with bank account info (same format as input_settings.json)",
+    )
     parser.add_argument("--output", help="Optional JSON output path")
 
     args = parser.parse_args(argv)
 
-    path = run_misc_income("", args.workbook, output_path=args.output)
+    path = run_misc_income(
+        args.workbook,
+        bank_account_json=args.bank_account,
+        output_path=args.output,
+    )
     print(f"Report written to {path}")
     return 0
 
