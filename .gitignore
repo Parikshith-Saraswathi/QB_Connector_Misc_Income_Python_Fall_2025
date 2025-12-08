@@ -2,3 +2,6 @@ __pycache__/
 **/__pycache__/
 dist/
 build/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
