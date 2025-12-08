@@ -78,14 +78,14 @@ def run_misc_income(
             settings = InputSettings.load(Path(bank_account_json))
 
         excel_terms = extract_deposits(workbook_path)
-        qb_terms = fetch_deposit_lines()
+        qb_terms = fetch_deposit_lines(settings.bank_account)
         comparison = compare_excel_qb(excel_terms, qb_terms)
 
         # Add Excel-only misc income into QB first
         add_misc_income(comparison.excel_only, settings)
 
         # Re-fetch QB terms so that Excel-only items are included
-        updated_qb_terms = fetch_deposit_lines()
+        updated_qb_terms = fetch_deposit_lines(settings.bank_account)
         updated_comparison = compare_excel_qb(excel_terms, updated_qb_terms)
 
         # Conflict collection (after adding Excel-only items)
