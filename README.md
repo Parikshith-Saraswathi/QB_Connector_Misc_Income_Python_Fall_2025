@@ -38,13 +38,13 @@ This will create `misc_income_cli.exe` in the `dist/` folder.
 Run the CLI with the following arguments:
 
 ```
-misc_income_cli.exe --workbook <path_to_excel> --bank_account <path_to_json> --output <path_to_output>
+misc_income_cli.exe --workbook <path_to_excel> --bank_account <name> --output <path_to_output>
 ```
 
 Example:
 
 ```
-misc_income_cli.exe --workbook C:\Users\SaraswathiP\repo\project\QB_Connector_Misc_Income_Python_Fall_2025\company_data.xlsx --bank_account C:\Users\SaraswathiP\repo\project\QB_Connector_Misc_Income_Python_Fall_2025\src\input_settings.json --output C:\Users\SaraswathiP\repo\project\Project_Result\report.json
+.\misc_income_cli.exe --workbook C:\Users\SaraswathiP\repo\project\QB_Connector_Misc_Income_Python_Fall_2025\company_data.xlsx --bank_account Testing  --output C:\Users\SaraswathiP\repo\project\Project_Result\report.json
 ```
 
 ### Arguments

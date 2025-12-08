@@ -54,14 +54,16 @@ def _parse_response(raw_xml: str) -> ET.Element:
     return root
 
 
-def fetch_deposit_lines() -> list[MiscIncome]:
+def fetch_deposit_lines(bank_account: str) -> list[MiscIncome]:
     qbxml = (
         '<?xml version="1.0"?>\n'
         '<?qbxml version="16.0"?>\n'
         "<QBXML>\n"
         '  <QBXMLMsgsRq onError="stopOnError">\n'
         "    <DepositQueryRq>\n"
-        "      <IncludeLineItems >true</IncludeLineItems >\n"
+        "      <AccountFilter >\n"
+        f"           <FullName>{_escape_xml(str(bank_account))}</FullName>\n"
+        "      </AccountFilter>\n"
         "    </DepositQueryRq>\n"
         "  </QBXMLMsgsRq>\n"
         "</QBXML>"
@@ -88,6 +90,17 @@ def fetch_deposit_lines() -> list[MiscIncome]:
     return deposit
 
 
+def _escape_xml(value: str) -> str:
+    """Escape XML special characters for safe QBXML construction."""
+    return (
+        value.replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace('"', "&quot;")
+        .replace("'", "&apos;")
+    )
+
+
 # def fetch_account_types(id: str) -> str:
 #     qbxml = (
 #         '<?xml version="1.0"?>\n'
@@ -111,6 +124,7 @@ def fetch_deposit_lines() -> list[MiscIncome]:
 __all__ = ["fetch_deposit_lines", "MiscIncome"]
 
 if __name__ == "__main__":
-    deposits = fetch_deposit_lines()
+    # Example usage: pass a bank account name
+    deposits = fetch_deposit_lines("Chase")
     for deposit in deposits:
         print(deposit)

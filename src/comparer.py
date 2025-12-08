@@ -59,7 +59,8 @@ def compare_excel_qb(excel_data, qb_data) -> ComparisonReport:
 if __name__ == "__main__":
     excel_file = Path("company_data.xlsx")
     excel_data: List[MiscIncome] = extract_deposits(excel_file)
-    qb_data: List[MiscIncome] = fetch_deposit_lines()
+    # Example: pass a bank account name for testing
+    qb_data: List[MiscIncome] = fetch_deposit_lines("Chase")
     report = compare_excel_qb(excel_data, qb_data)
 
     print("Excel Only:")
