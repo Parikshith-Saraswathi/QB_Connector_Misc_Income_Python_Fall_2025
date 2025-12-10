@@ -1,8 +1,24 @@
 {
   "status": "success",
-  "generated_at": "2025-12-10T19:40:39.885716+00:00",
-  "added_misc_income": [],
+  "generated_at": "2025-12-10T19:55:26.024269+00:00",
+  "added_misc_income": [
+    {
+      "record_id": "7780",
+      "amount": 800.0,
+      "chart_of_account": "Rental",
+      "source": "excel",
+      "customer_name": "Default Customer"
+    }
+  ],
   "conflicts": [
+    {
+      "record_id": "7779",
+      "qb_chart_of_account": "Taxes-Property",
+      "excel_chart_of_account": "Taxes-Property",
+      "qb_amount": 800.0,
+      "excel_amount": 700.0,
+      "reason": "data_mismatch"
+    },
     {
       "record_id": "123",
       "qb_chart_of_account": "Misc Credits",
@@ -12,6 +28,6 @@
       "reason": "missing_in_excel"
     }
   ],
-  "same_misc_income": 5,
+  "same_misc_income": 4,
   "error": null
 }
