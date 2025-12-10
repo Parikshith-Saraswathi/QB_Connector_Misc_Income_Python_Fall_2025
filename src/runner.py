@@ -81,9 +81,6 @@ def run_misc_income(
         qb_terms = fetch_deposit_lines(settings.bank_account)
         comparison = compare_excel_qb(excel_terms, qb_terms)
 
-        # Add Excel-only misc income into QB first
-        add_misc_income(comparison.excel_only, settings)
-
         # Re-fetch QB terms so that Excel-only items are included
         updated_qb_terms = fetch_deposit_lines(settings.bank_account)
         updated_comparison = compare_excel_qb(excel_terms, updated_qb_terms)
@@ -95,12 +92,6 @@ def run_misc_income(
             _missing_in_excel_conflict(t) for t in updated_comparison.qb_only
         )
 
-        # Add sections to report
-        report_payload["added_misc_income"] = [
-            dataclasses.asdict(item) for item in comparison.excel_only
-        ]
-        report_payload["conflicts"] = conflicts
-
         # Count matched data after adding Excel-only terms
         total_excel = len(excel_terms)
         unmatched = len(updated_comparison.excel_only) + len(
@@ -108,6 +99,15 @@ def run_misc_income(
         )
         matched = total_excel - unmatched
         report_payload["same_misc_income"] = max(matched, 0)
+
+        # Add Excel-only misc income into QB first
+        add_misc_income(comparison.excel_only, settings)
+
+        # Add sections to report
+        report_payload["added_misc_income"] = [
+            dataclasses.asdict(item) for item in comparison.excel_only
+        ]
+        report_payload["conflicts"] = conflicts
 
     except Exception as exc:
         report_payload["status"] = "error"
@@ -122,8 +122,9 @@ __all__ = ["run_misc_income", "DEFAULT_REPORT_NAME"]
 
 if __name__ == "__main__":
     excel_file = Path("company_data.xlsx")
-    bank_account_json = Path("src/input_settings.json")
+    # bank_account_json = Path("src/input_settings.json")
+    # bank_account_json = Chase
     run_misc_income(
         workbook_path=excel_file,
-        bank_account_json=bank_account_json,
+        bank_account_json="Testing",
     )
