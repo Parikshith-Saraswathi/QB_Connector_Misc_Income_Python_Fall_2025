@@ -61,9 +61,7 @@ def fetch_deposit_lines(bank_account: str) -> list[MiscIncome]:
         "<QBXML>\n"
         '  <QBXMLMsgsRq onError="stopOnError">\n'
         "    <DepositQueryRq>\n"
-        "      <AccountFilter >\n"
-        f"           <FullName>{_escape_xml(str(bank_account))}</FullName>\n"
-        "      </AccountFilter>\n"
+        "      <IncludeLineItems >true</IncludeLineItems >\n"
         "    </DepositQueryRq>\n"
         "  </QBXMLMsgsRq>\n"
         "</QBXML>"
@@ -99,26 +97,6 @@ def _escape_xml(value: str) -> str:
         .replace('"', "&quot;")
         .replace("'", "&apos;")
     )
-
-
-# def fetch_account_types(id: str) -> str:
-#     qbxml = (
-#         '<?xml version="1.0"?>\n'
-#         '<?qbxml version="16.0"?>\n'
-#         "<QBXML>\n"
-#         '  <QBXMLMsgsRq onError="stopOnError">\n'
-#         "    <AccountQueryRq>\n"
-#         f"      <ListID>{id}</ListID>\n"
-#         "    </AccountQueryRq>\n"
-#         "  </QBXMLMsgsRq>\n"
-#         "</QBXML>"
-#     )
-#     # print(qbxml)
-#     root = _send_qbxml(qbxml)
-#     account_types = root.find(".//AccountQueryRs/AccountRet/AccountType")
-#     if account_types is not None and account_types.text is not None:
-#         return account_types.text
-#     return "Unknown Account Type"
 
 
 __all__ = ["fetch_deposit_lines", "MiscIncome"]
