@@ -93,3 +93,59 @@ If you choose to use a JSON settings file instead of a direct bank account name,
 ```
 
 The value for `bank_account` should match **the exact name** of the bank account in QuickBooks where deposits will be added. Then pass the path to this file using the `--bank_account` argument.
+
+## Expected Output
+
+The CLI generates a JSON report file with the following structure:
+
+```json
+{
+  "status": "success",
+  "generated_at": "2025-12-10T19:55:26.024269+00:00",
+  "added_misc_income": [
+    {
+      "record_id": "7780",
+      "amount": 800.0,
+      "chart_of_account": "Rental",
+      "source": "excel",
+      "customer_name": "Default Customer"
+    }
+  ],
+  "conflicts": [
+    {
+      "record_id": "7779",
+      "qb_chart_of_account": "Taxes-Property",
+      "excel_chart_of_account": "Taxes-Property",
+      "qb_amount": 800.0,
+      "excel_amount": 700.0,
+      "reason": "data_mismatch"
+    },
+    {
+      "record_id": "123",
+      "qb_chart_of_account": "Misc Credits",
+      "excel_chart_of_account": null,
+      "qb_amount": 200.0,
+      "excel_amount": null,
+      "reason": "missing_in_excel"
+    }
+  ],
+  "same_misc_income": 4,
+  "error": null
+}
+```
+
+### Output Fields
+
+- **status**: Indicates whether the operation was successful (`"success"`) or encountered an error (`"error"`).
+- **generated_at**: ISO 8601 timestamp of when the report was generated.
+- **added_misc_income**: Array of records from Excel that were successfully added to QuickBooks.
+  - `record_id`: Unique identifier for the record.
+  - `amount`: Transaction amount.
+  - `chart_of_account`: Account category (e.g., "Rental", "Misc Credits").
+  - `source`: Data source (always "excel" for added records).
+  - `customer_name`: Associated customer name.
+- **conflicts**: Array of records with discrepancies between Excel and QuickBooks. Can occur in two scenarios:
+  - **data_mismatch**: Record exists in both sources but with different amounts or chart of accounts.
+  - **missing_in_excel**: Record exists in QuickBooks but not in the Excel file.
+- **same_misc_income**: Count of records that matched identically between Excel and QuickBooks (no action needed).
+- **error**: Error message if the operation failed; `null` if successful.
